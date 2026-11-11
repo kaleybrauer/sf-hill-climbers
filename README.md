@@ -41,7 +41,7 @@ python3 build.py                              # -> docs/index.html and dist/sf-h
 
 ## Editing the words
 
-All the prose on the page lives in [`web/text.md`](web/text.md): the intro, every section, the Things to try cards, the climber descriptions, the footer, and the sentences around generated numbers (written with `{placeholders}`). Edit it anywhere, including GitHub's web editor, and push; the note at the top of the file explains the format. The build stops with a message if a block is missing, misnamed or unused, so a typo can't break the live site. Short labels such as tab names, buttons and legends are in `web/index.html`.
+All the prose on the page lives in [`web/text.md`](web/text.md): the intro, every section, the Things to try cards, the climber descriptions, the footer, and the sentences around generated numbers (written with `{placeholders}`). Edit it anywhere, including GitHub's web editor, and push; the note at the top of the file explains the format (paragraphs, **bold**, *italic*, [links](https://example.com)). The build stops with a message if a block is missing, misnamed or unused, so a typo can't break the live site. Short labels such as tab names, buttons and legends are in `web/index.html`.
 
 ## Publishing
 

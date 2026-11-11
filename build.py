@@ -18,8 +18,9 @@ SITE_URL = "https://www.kaleybrauer.com/sf-hill-climbers/"  # public copy (GitHu
 
 
 def inline(text):
-    """One paragraph of text.md as HTML: escaped, with **bold**, *italic* and no breaks in "η 256"."""
+    """One paragraph of text.md as HTML: escaped, with [links](https://...), **bold**, *italic* and no breaks in "η 256"."""
     out = html.escape(" ".join(text.split()), quote=False)
+    out = re.sub(r"\[([^\]]+)\]\((https?://[^\s)]+)\)", r'<a href="\2">\1</a>', out)
     out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
     out = re.sub(r"\*(.+?)\*", r"<em>\1</em>", out)
     return re.sub(r"(η|β|σ|T₀) (?=\d)", "\\1\u00a0", out)
