@@ -96,6 +96,27 @@ check("noise is reproducible for the same start", () => {
   assert.strictEqual(a.x, b.x); assert.strictEqual(a.y, b.y);
 });
 
+// Engines may round Math.sin/cos/log/pow/hypot differently, and noisy runs with
+// a big learning rate are chaotic, so the climb must not use them (an iPhone
+// once sent the "Aim for the high ground" preset to a different summit).
+check("the update rules and climb use no engine-dependent Math functions", () => {
+  const src = require("node:fs").readFileSync(require.resolve("../web/src/core.js"), "utf8");
+  const region = src.slice(src.indexOf("const OPTIMIZERS"), src.indexOf("// ---------- Where did it end up?")).replace(/\/\/.*$/gm, "");
+  assert.ok(region.length > 1000, "region not found");
+  const bad = region.match(/Math\.(sin|cos|tan|atan2?|log|exp|pow|hypot|cbrt)\b/g);
+  assert.ok(!bad, `found ${bad}`);
+});
+
+check("dsin, dcos and dlog match Math to about 1e-15", () => {
+  for (let i = 0; i <= 2000; i++) {
+    const x = (i / 2000 - 0.5) * 20, u = (i + 1) / 2001;
+    assert.ok(Math.abs(core.dsin(x) - Math.sin(x)) < 1e-14, `sin ${x}`);
+    assert.ok(Math.abs(core.dcos(x) - Math.cos(x)) < 1e-14, `cos ${x}`);
+    assert.ok(Math.abs(core.dlog(u) - Math.log(u)) < 1e-14, `log ${u}`);
+  }
+  assert.ok(Math.abs(core.dlog(2 ** -32) - Math.log(2 ** -32)) < 1e-13);
+});
+
 process.exitCode = failures ? 1 : 0;
 console.log(failures ? `${failures} failed` : "all passed");
 

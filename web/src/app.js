@@ -17,7 +17,7 @@
   const RAMP_MAX_FT = 930;
 
   const lat0 = (meta.bbox.south + meta.bbox.north) / 2;
-  const M_LAT = Math.PI * 6378137 / 180, M_LON = M_LAT * Math.cos(lat0 * Math.PI / 180);
+  const M_LAT = Math.PI * 6378137 / 180, M_LON = M_LAT * C.dcos(lat0 * Math.PI / 180); // dcos: same start point in every browser
   const toXY = (lat, lon) => ({ x: (lon - meta.bbox.west) * M_LON, y: (meta.bbox.north - lat) * M_LAT });
 
   const PLACES = {
@@ -26,7 +26,7 @@
     "Hayes Valley": [37.7765, -122.4242],
     "Ocean Beach at Judah": [37.7605, -122.5080],
     "Haight & Ashbury": [37.7699, -122.4469],
-    "Chinatown": [37.7955, -122.4064],
+    "Dolores Park": [37.7596, -122.4269],
   };
 
   // ---------- State ----------
@@ -1049,7 +1049,7 @@
     { title: "Ocean Beach at Judah", text: "The Sunset is a long, gentle ramp. SGD's steps shrink with the slope, so it needs more than twice as many steps as Adam to reach the top.", place: "Ocean Beach at Judah" },
     { title: "Swap Adam for Lion", text: "Lion only moves diagonally, a fixed distance per axis. From Ocean Beach it walks across the whole Sunset to Forest Hill.", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
     { title: "Decay the learning rate", text: "With a cosine schedule, Muon's fixed-length steps shrink to zero, so it finally settles on its summit instead of circling it.", place: "Haight & Ashbury", set: { cosine: true } },
-    { title: "Aim for the high ground*", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay, and it crosses from Chinatown to Mount Davidson. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Chinatown", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
+    { title: "Aim for the high ground*", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay. From Dolores Park, where the other three stop on Dolores Heights, it climbs on to the highest summits in the city. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Dolores Park", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
   ];
   $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${t.title}</b><span>${t.text}</span></button>`).join("");
   $("tries").addEventListener("click", (ev) => {

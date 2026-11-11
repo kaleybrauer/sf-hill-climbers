@@ -72,13 +72,13 @@
     adam: {
       label: "Adam", lr: [8, 0.5, 60], lrUnit: "m per step",
       rule: "m ← β₁m + (1−β₁)g\nv ← β₂v + (1−β₂)g²\nx ← x − η·m̂ / (√v̂ + ε)",
-      init: () => ({ m0: 0, m1: 0, v0: 0, v1: 0, t: 0 }),
+      init: () => ({ m0: 0, m1: 0, v0: 0, v1: 0, p1: 1, p2: 1 }),
       step(s, g0, g1, lr, hp) {
         const b1 = hp.beta, b2 = 0.999;
-        s.t++;
+        s.p1 *= b1; s.p2 *= b2; // β₁ᵗ and β₂ᵗ
         s.m0 = b1 * s.m0 + (1 - b1) * g0; s.m1 = b1 * s.m1 + (1 - b1) * g1;
         s.v0 = b2 * s.v0 + (1 - b2) * g0 * g0; s.v1 = b2 * s.v1 + (1 - b2) * g1 * g1;
-        const c1 = 1 - Math.pow(b1, s.t), c2 = 1 - Math.pow(b2, s.t);
+        const c1 = 1 - s.p1, c2 = 1 - s.p2;
         return [-lr * (s.m0 / c1) / (Math.sqrt(s.v0 / c2) + 1e-8),
                 -lr * (s.m1 / c1) / (Math.sqrt(s.v1 / c2) + 1e-8)];
       },
@@ -118,7 +118,7 @@
       step(s, g0, g1, lr, hp) {
         s.m0 = hp.beta * s.m0 + g0; s.m1 = hp.beta * s.m1 + g1;
         let x0 = g0 + hp.beta * s.m0, x1 = g1 + hp.beta * s.m1; // Nesterov form, as in Muon
-        const n = Math.hypot(x0, x1) + 1e-7;
+        const n = Math.sqrt(x0 * x0 + x1 * x1) + 1e-7;
         x0 /= n; x1 /= n;
         // Newton-Schulz on the 1x2 matrix [x0 x1]: XXᵀ is the scalar ‖X‖².
         for (let k = 0; k < 5; k++) {
@@ -131,6 +131,31 @@
   };
 
   // ---------- Running a climb ----------
+
+  // Math.sin, Math.cos, Math.log and Math.pow are allowed to differ in the last
+  // bit between browser engines, and a noisy climb with a big learning rate is
+  // chaotic enough for that to change which hill it ends on (Chrome and Safari
+  // disagreed). These use only + − × ÷, which every engine rounds the same way.
+  const TAU = 2 * Math.PI, LN2 = 0.6931471805599453;
+  function dsin(x) {
+    x -= TAU * Math.round(x / TAU);
+    if (x > Math.PI / 2) x = Math.PI - x;
+    else if (x < -Math.PI / 2) x = -Math.PI - x;
+    const x2 = x * x;
+    let t = 1;
+    for (let n = 22; n >= 2; n -= 2) t = 1 - x2 * t / (n * (n + 1)); // Taylor series to x^23
+    return x * t;
+  }
+  const dcos = (x) => dsin(x + Math.PI / 2);
+  function dlog(u) { // u > 0
+    let k = 0;
+    while (u < 0.5) { u *= 2; k--; }
+    while (u >= 1) { u /= 2; k++; }
+    const z = (u - 1) / (u + 1), z2 = z * z; // |z| <= 1/3
+    let s = 0;
+    for (let n = 39; n >= 1; n -= 2) s = 1 / n + z2 * s;
+    return 2 * z * s + k * LN2;
+  }
 
   function mulberry32(seed) {
     return function () {
@@ -148,7 +173,7 @@
     const opt = OPTIMIZERS[optKey];
     const s = opt.init();
     const th = (settings.rotationDeg || 0) * Math.PI / 180;
-    const cs = Math.cos(th), sn = Math.sin(th);
+    const cs = th ? dcos(th) : 1, sn = th ? dsin(th) : 0;
     const steps = settings.steps;
     const rand = mulberry32(((x * 73856093) ^ (y * 19349663)) | 0);
     const path = record ? new Float32Array(2 * (steps + 1)) : null;
@@ -163,11 +188,11 @@
       let g0 = -bilinear(t, t.gx, x, y), g1 = -bilinear(t, t.gy, x, y);
       if (settings.noise > 0) {
         const u1 = rand() || 1e-9, u2 = rand();
-        const rr = settings.noise * Math.sqrt(-2 * Math.log(u1));
-        g0 += rr * Math.cos(2 * Math.PI * u2); g1 += rr * Math.sin(2 * Math.PI * u2);
+        const rr = settings.noise * Math.sqrt(-2 * dlog(u1));
+        g0 += rr * dcos(TAU * u2); g1 += rr * dsin(TAU * u2);
       }
       // Into the rotated frame the optimizer sees, step, and back out.
-      const lr = settings.lr * (settings.cosine ? 0.5 * (1 + Math.cos(Math.PI * k / steps)) : 1);
+      const lr = settings.lr * (settings.cosine ? 0.5 * (1 + dcos(Math.PI * k / steps)) : 1);
       const d = opt.step(s, cs * g0 + sn * g1, -sn * g0 + cs * g1, lr, settings);
       x += cs * d[0] - sn * d[1];
       y += sn * d[0] + cs * d[1];
@@ -178,12 +203,14 @@
       // Converged: moved less than half a metre over the last 100 steps.
       if (k >= 100 && settledAt < 0) {
         const j = (k + 1) % 101;
-        if (Math.hypot(x - hist[2 * j], y - hist[2 * j + 1]) < 0.5) { settledAt = k + 1; if (!record) { k++; break; } }
+        const ex = x - hist[2 * j], ey = y - hist[2 * j + 1];
+        if (Math.sqrt(ex * ex + ey * ey) < 0.5) { settledAt = k + 1; if (!record) { k++; break; } }
       }
     }
     const j = k % 101, back = Math.min(k, 100);
     const jb = (k - back) % 101;
-    const disp = k >= 100 ? Math.hypot(x - hist[2 * jb], y - hist[2 * jb + 1]) : Infinity;
+    const dx = x - hist[2 * jb], dy = y - hist[2 * jb + 1];
+    const disp = k >= 100 ? Math.sqrt(dx * dx + dy * dy) : Infinity;
     return { x, y, disp, steps: k, settledAt: settledAt < 0 ? null : settledAt,
              path: path ? path.subarray(0, 2 * (k + 1)) : null };
   }
@@ -226,7 +253,7 @@
     // A flat-topped summit can stop the walk a few cells short of the recorded top.
     let best = -1, bestD = 7;
     for (let i = 0; i < hills.length; i++) {
-      const hl = hills[i], d = Math.hypot(hl.r - r, hl.c - c);
+      const hl = hills[i], d = Math.sqrt((hl.r - r) * (hl.r - r) + (hl.c - c) * (hl.c - c));
       if (d < bestD && Math.abs(hl.elev - t.h[r * t.W + c]) < 0.3) { best = i; bestD = d; }
     }
     return best;
@@ -370,7 +397,7 @@
   }
 
   const api = { makeTerrain, heightAt, slopeAt, ARRIVED_M, OPTIMIZERS, climb, classify, outcomeCode, BUMP, STALLED, LEFT,
-                MEMORY, MATRIX_OPTS, makeMemoryTask, memoryTrainer, trainMemory, mulberry32 };
+                MEMORY, MATRIX_OPTS, makeMemoryTask, memoryTrainer, trainMemory, mulberry32, dsin, dcos, dlog };
   root.SFCore = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
