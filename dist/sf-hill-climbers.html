@@ -1929,16 +1929,25 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
 
   // mode "fly": a new starting point; glide to frame the race, then run it.
   // Otherwise (settings changed): keep the view unless the paths no longer fit.
+  // mode: "fly" for a new start (always reframe), "refit" when a change is
+  // finished (new climber, slider let go: reframe unless showing the whole
+  // city), nothing while a slider moves (only zoom out if a path leaves the view).
+  let raceSig = "";
   function runRace(mode) {
-    computeRace();
-    renderScores();
+    const sig = JSON.stringify([state, start.x, start.y]), same = sig === raceSig;
+    raceSig = sig;
+    if (!same) { computeRace(); renderScores(); }
     raceFrame = fitFrame();
     if (mode === "fly") {
       if (anim) { cancelAnimationFrame(anim.raf); anim = null; }
       wholeCity = false;
       if (activeTab !== "race") { view = { ...raceFrame }; return; }
       flyTo(raceFrame, 0, playRace);
-    } else {
+    } else if (mode === "refit" && !wholeCity && !sameView(view, raceFrame)) {
+      if (anim) { cancelAnimationFrame(anim.raf); anim = null; }
+      if (activeTab !== "race") { view = { ...raceFrame }; return; }
+      flyTo(raceFrame, 0, playRace);
+    } else if (!same) {
       if (!wholeCity && !contains(view, raceFrame)) { view = { ...raceFrame }; renderRaceBase(); }
       else if (!fly) renderRaceBase();
       playRace();
@@ -2370,13 +2379,14 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
         $(`lane-${i}-out`).textContent = paramText(state.lanes[i]);
         $(`lane-${i}-unit`).textContent = C.OPTIMIZERS[opt].lrUnit;
         updateTerrHeaders();
-        changed();
+        changed("refit");
       });
       $(`lane-${i}-lr`).addEventListener("input", (ev) => {
         state.lanes[i].lr = sliderToLr(state.lanes[i].opt, Number(ev.target.value));
         $(`lane-${i}-out`).textContent = paramText(state.lanes[i]);
         changed();
       });
+      $(`lane-${i}-lr`).addEventListener("change", () => changed("refit"));
     });
   }
 
@@ -2387,13 +2397,16 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     $("set-rot").value = state.rotationDeg; $("out-rot").textContent = `${state.rotationDeg}°`;
     $("set-cosine").checked = state.cosine;
   }
-  const bindRange = (id, key, parse) => $(id).addEventListener("input", (ev) => { state[key] = parse(ev.target.value); syncShared(); changed(); });
+  const bindRange = (id, key, parse) => {
+    $(id).addEventListener("input", (ev) => { state[key] = parse(ev.target.value); syncShared(); changed(); });
+    $(id).addEventListener("change", () => changed("refit"));
+  };
   bindRange("set-beta", "beta", Number);
   bindRange("set-steps", "steps", Number);
   bindRange("set-noise", "noise", Number);
   bindRange("set-rot", "rotationDeg", Number);
-  $("set-cosine").addEventListener("change", (ev) => { state.cosine = ev.target.checked; changed(); });
-  $("reset").addEventListener("click", () => { state = defaults(); buildLanes(); syncShared(); updateTerrHeaders(); changed(); });
+  $("set-cosine").addEventListener("change", (ev) => { state.cosine = ev.target.checked; changed("refit"); });
+  $("reset").addEventListener("click", () => { state = defaults(); buildLanes(); syncShared(); updateTerrHeaders(); changed("refit"); });
 
   let changeTimer = null;
   function changed(mode) {
