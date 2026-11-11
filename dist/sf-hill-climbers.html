@@ -380,6 +380,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
 .prose { display: grid; gap: 12px; align-content: start; }
 .note .prose p strong { color: var(--ink); }
 
+.note > .tries-note { font-size: var(--step--1); max-width: 92ch; }
 .tries { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 10px; }
 .try {
   text-align: left;
@@ -441,7 +442,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
   <header class="masthead">
     <h1>SF Hill Climbers</h1>
     <p class="subtitle">loss = −elevation</p>
-    <p class="lede">Pick a starting point anywhere in the city. Four optimizers climb as high as they can, feeling only the slope under their feet. The loss is minus the elevation, so every hilltop is a local minimum and <strong>Mount Davidson (928 ft) is the global minimum.</strong> Most starting points never reach it.</p>
+    <p class="lede">Pick a starting point anywhere in the city! Four optimizers will climb as high as they can. The loss is minus the elevation, so every hilltop is a local minimum and <strong>Mount Davidson (928 ft) is the global minimum.</strong></p>
   </header>
 
   <section class="tool" id="tool" aria-label="Optimizer map">
@@ -551,24 +552,14 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     <section class="note" id="try">
       <h2>Things to try</h2>
       <div class="tries" id="tries"></div>
+      <p class="tries-note" id="high-ground-note">* About "Aim for the high ground": these settings came from trying many slider combinations and keeping the ones that reached the top of this map most often, so they are tuned on the answer. They work because Mount Davidson sits in the city's biggest block of high ground. Big, noisy steps find broad high ground, not the single highest point: even among runs that reach the four highest summits, only about a third end on Mount Davidson itself. Add a narrow 1,000 ft peak in Bayview and the same settings reach it from fewer than 1 start in 200, less often than the defaults do. Momentum isn't special here either. Tuned the same way, Lion does slightly better (59% of starts, against Momentum's best of 52%), while Adam's best is about 13%.</p>
     </section>
 
     <section class="note" id="climbers">
       <h2>The climbers</h2>
-      <p>Each one sees the same thing at every step: the slope of the ground where it stands, as a two-number gradient g. They differ only in what they do with it. η is the learning rate you can set in the panel.</p>
-      <p>The default learning rates are sensible picks, not tuned to make any optimizer win. Where each one ends up depends on η, so try the sliders before drawing conclusions.</p>
+      <p>Each climber is a different optimizer. Each one tries to climb to higher ground after seeing the slope of the ground where it stands, as a two-number gradient g. η is the learning rate you can set in the panel.</p>
+      <p>The default learning rates are sensible picks that are not tuned to make any optimizer win. Where each one ends up depends strongly on η, so try the sliders.</p>
       <div class="climbers" id="climber-cards"></div>
-    </section>
-
-    <section class="note" id="speed">
-      <h2>Why Momentum goes furthest</h2>
-      <div class="prose">
-        <p>To reach a higher summit, a climber usually has to go back down through a valley first. In loss terms, it has to climb out of a local minimum. SGD has no memory, so it stops at the first top it finds. Momentum keeps a running velocity and its steps grow with the slope, so speed picked up on the way up one hill can carry it over the top, across the next valley and up the far side.</p>
-        <p>Adam, Lion and Muon have a speed limit. They normalize their steps, so a step is about η long however steep the ground is. From Chinatown, with the learning rates that work best for each, Momentum's longest step is 275 m while Adam, Lion and Muon never pass 45 m. Most of Adam's steps are only a few meters, because it divides by a long memory of how steep the ground has been.</p>
-        <p>Lion and Muon still get partway by taking steps long enough to hop over small hills. With the best settings from a sweep of the sliders (a big η, noise and cosine decay), the share of starts that end on one of the four highest summits is 50% for Momentum, 46% for Lion, 31% for Nesterov, 25% for Muon and 10 to 12% for SGD, Adam, RMSprop and Adagrad.</p>
-        <p>Even Momentum is partly lucky. Those settings were chosen by checking how often they reach the top of this particular map, and they work because Mount Davidson sits in the city's biggest block of high ground. Large, noisy steps find broad high ground, not the single highest point: even among runs that reach the four highest summits, only about a third end on Mount Davidson itself. Add a narrow 1,000 ft peak in Bayview and the same settings reach it from fewer than 1 start in 200, less often than the defaults do. Make that peak a couple of kilometers wide and they find it far more often. It is the familiar idea that big, noisy steps favor wide minima over sharp ones.</p>
-        <p>In real training the speed limit is the point. A normalized step can't blow up, and one learning rate works for parameters whose gradients differ by orders of magnitude. Finding the global minimum isn't the goal there anyway, for the reasons under "What a map can't show" below.</p>
-      </div>
     </section>
 
     <section class="note" id="north">
@@ -581,7 +572,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     </section>
 
     <section class="note" id="muon">
-      <h2>Muon, reduced to two numbers</h2>
+      <h2>Muon was not built for a 2D map</h2>
       <div class="prose">
         <p>Muon was built for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.</p>
         <p>On this map the position is just two numbers: a 1×2 matrix with one singular value. The whole procedure collapses to "follow the momentum and always step the same distance." That is the green climber. It never quite settles on a summit, because its step never shrinks unless you turn on the learning-rate decay.</p>
@@ -2335,7 +2326,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     { title: "Ocean Beach at Judah", text: "The Sunset is a long, gentle ramp. SGD's steps shrink with the slope, so it needs more than twice as many steps as Adam to reach the top.", place: "Ocean Beach at Judah" },
     { title: "Swap Adam for Lion", text: "Lion only moves diagonally, a fixed distance per axis. From Ocean Beach it walks across the whole Sunset to Forest Hill.", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
     { title: "Decay the learning rate", text: "With a cosine schedule, Muon's fixed-length steps shrink to zero, so it finally settles on its summit instead of circling it.", place: "Haight & Ashbury", set: { cosine: true } },
-    { title: "Aim for the high ground", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay, and it crosses from Chinatown to Mount Davidson. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Chinatown", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
+    { title: "Aim for the high ground*", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay, and it crosses from Chinatown to Mount Davidson. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Chinatown", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
   ];
   $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${t.title}</b><span>${t.text}</span></button>`).join("");
   $("tries").addEventListener("click", (ev) => {
