@@ -81,7 +81,7 @@ Keeps a running velocity. It speeds up on long slopes, carries through shallow l
 Divides each axis's step by that axis's recent slope size, so it moves about η per axis per step on steep and flat ground alike. That per-axis treatment is also why it favors diagonals.
 
 ## climber muon: Orthogonalized momentum
-Normalizes the momentum, then runs Muon's Newton-Schulz polish on it. For a 1×2 matrix that leaves a fixed step of about 0.7 η along the momentum.
+Normalizes the momentum, then runs a few Newton–Schulz iterations, a cheap way to push every singular value of a matrix toward 1. A 1×2 matrix has only one, so this leaves a fixed step of about 0.7 η along the momentum.
 
 ## climber nesterov: Look-ahead momentum
 Momentum that adds the current slope on top of the updated velocity, which damps some of the overshoot.
