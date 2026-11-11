@@ -92,15 +92,6 @@
         return [-lr * g0 / (Math.sqrt(s.v0) + 1e-8), -lr * g1 / (Math.sqrt(s.v1) + 1e-8)];
       },
     },
-    adagrad: {
-      label: "Adagrad", lr: [60, 2, 600], lrUnit: "m per step at the start",
-      rule: "G ← G + g²\nx ← x − η·g / (√G + ε)",
-      init: () => ({ G0: 0, G1: 0 }),
-      step(s, g0, g1, lr) {
-        s.G0 += g0 * g0; s.G1 += g1 * g1;
-        return [-lr * g0 / (Math.sqrt(s.G0) + 1e-8), -lr * g1 / (Math.sqrt(s.G1) + 1e-8)];
-      },
-    },
     lion: {
       label: "Lion", lr: [6, 0.5, 60], lrUnit: "m per axis per step",
       rule: "u ← sign(β₁m + (1−β₁)g)\nm ← β₂m + (1−β₂)g\nx ← x − η·u",
@@ -127,6 +118,11 @@
         }
         return [-lr * x0, -lr * x1];
       },
+    },
+    anneal: {
+      label: "Simulated annealing", sym: "T₀", lr: [40, 2, 300], lrUnit: "m of elevation at the start",
+      rule: "x′ ← x + s·ξ\nΔh ← h(x′) − h(x)\nx ← x′ if Δh ≥ 0 or u < e^(Δh/T)\nT and s shrink each step",
+      anneal: true, // no gradient: see annealClimb
     },
   };
 
@@ -156,6 +152,15 @@
     for (let n = 39; n >= 1; n -= 2) s = 1 / n + z2 * s;
     return 2 * z * s + k * LN2;
   }
+  function dexp(x) {
+    if (x < -60) return 0; // below anything rand() can produce
+    const k = Math.round(x / LN2), r = x - k * LN2; // |r| <= ln2 / 2
+    let e = 1;
+    for (let n = 16; n >= 1; n--) e = 1 + r * e / n; // Taylor series to r^16
+    for (let i = 0; i < k; i++) e *= 2;
+    for (let i = 0; i > k; i--) e /= 2;
+    return e;
+  }
 
   function mulberry32(seed) {
     return function () {
@@ -171,6 +176,7 @@
   // number of steps taken, and (if record) the path as [x0,y0,x1,y1,...].
   function climb(t, optKey, settings, x, y, record) {
     const opt = OPTIMIZERS[optKey];
+    if (opt.anneal) return annealClimb(t, settings, x, y, record);
     const s = opt.init();
     const th = (settings.rotationDeg || 0) * Math.PI / 180;
     const cs = th ? dcos(th) : 1, sn = th ? dsin(th) : 0;
@@ -213,6 +219,42 @@
     const disp = k >= 100 ? Math.sqrt(dx * dx + dy * dy) : Infinity;
     return { x, y, disp, steps: k, settledAt: settledAt < 0 ? null : settledAt,
              path: path ? path.subarray(0, 2 * (k + 1)) : null };
+  }
+
+  // Simulated annealing never looks at the slope. Each step it tries a random
+  // point about s away and moves there if it is higher, or otherwise with
+  // probability e^(drop / T). T starts at the lane's T₀ and s at 400 m; both
+  // cool geometrically, to T₀/500 and 10 m by the last step. The learning-rate
+  // settings (β, noise, rotation, decay) don't apply.
+  const ANNEAL = { s0: 400, s1: 10, cool: 0.002 };
+  function annealClimb(t, settings, x, y, record) {
+    const steps = settings.steps;
+    const rand = mulberry32(((x * 73856093) ^ (y * 19349663)) | 0);
+    const path = record ? new Float32Array(2 * (steps + 1)) : null;
+    if (path) { path[0] = x; path[1] = y; }
+    const xmin = 0.5 * t.cell, xmax = t.widthM - 0.5 * t.cell;
+    const ymin = 0.5 * t.cell, ymax = t.heightM - 0.5 * t.cell;
+    const tStep = dexp(dlog(ANNEAL.cool) / steps), sStep = dexp(dlog(ANNEAL.s1 / ANNEAL.s0) / steps);
+    let T = settings.lr, s = ANNEAL.s0, h = heightAt(t, x, y);
+    const hist = new Float32Array(2 * 101);
+    let settledAt = -1;
+    for (let k = 0; k < steps; k++) {
+      hist[2 * (k % 101)] = x; hist[2 * (k % 101) + 1] = y;
+      const u1 = rand() || 1e-9, u2 = rand(), r = s * Math.sqrt(-2 * dlog(u1));
+      const nx = Math.min(Math.max(x + r * dcos(TAU * u2), xmin), xmax);
+      const ny = Math.min(Math.max(y + r * dsin(TAU * u2), ymin), ymax);
+      const nh = heightAt(t, nx, ny);
+      if (nh >= h || rand() < dexp((nh - h) / T)) { x = nx; y = ny; h = nh; }
+      T *= tStep; s *= sStep;
+      if (path) { path[2 * k + 2] = x; path[2 * k + 3] = y; }
+      if (k >= 100 && settledAt < 0) {
+        const j = (k + 1) % 101, ex = x - hist[2 * j], ey = y - hist[2 * j + 1];
+        if (Math.sqrt(ex * ex + ey * ey) < 0.5) settledAt = k + 1;
+      }
+    }
+    const jb = Math.max(steps - 100, 0) % 101, dx = x - hist[2 * jb], dy = y - hist[2 * jb + 1];
+    return { x, y, disp: steps >= 100 ? Math.sqrt(dx * dx + dy * dy) : Infinity, steps,
+             settledAt: settledAt < 0 ? null : settledAt, path };
   }
 
   // ---------- Where did it end up? ----------
@@ -397,7 +439,7 @@
   }
 
   const api = { makeTerrain, heightAt, slopeAt, ARRIVED_M, OPTIMIZERS, climb, classify, outcomeCode, BUMP, STALLED, LEFT,
-                MEMORY, MATRIX_OPTS, makeMemoryTask, memoryTrainer, trainMemory, mulberry32, dsin, dcos, dlog };
+                MEMORY, MATRIX_OPTS, makeMemoryTask, memoryTrainer, trainMemory, mulberry32, dsin, dcos, dlog, dexp };
   root.SFCore = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

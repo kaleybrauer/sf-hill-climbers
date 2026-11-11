@@ -33,7 +33,7 @@ for (const key of Object.keys(core.OPTIMIZERS)) {
 }
 
 // Rotating the coordinate frame changes nothing for rotation-invariant rules.
-for (const key of ["sgd", "momentum", "nesterov", "muon"]) {
+for (const key of ["sgd", "momentum", "nesterov", "muon", "anneal"]) {
   check(`${key} path is unchanged by rotating the axes`, () => {
     const s = { ...base, steps: 200, lr: core.OPTIMIZERS[key].lr[0] };
     const a = core.climb(t, key, s, 300, 1600, true).path;
@@ -43,7 +43,7 @@ for (const key of ["sgd", "momentum", "nesterov", "muon"]) {
     assert.ok(maxd < 0.05, `paths differ by ${maxd.toFixed(3)} m`);
   });
 }
-for (const key of ["adam", "lion", "rmsprop", "adagrad"]) {
+for (const key of ["adam", "lion", "rmsprop"]) {
   check(`${key} path changes when the axes rotate`, () => {
     const s = { ...base, steps: 200, lr: core.OPTIMIZERS[key].lr[0] };
     const a = core.climb(t, key, s, 300, 1600, true).path;

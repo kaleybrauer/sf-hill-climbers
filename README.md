@@ -6,10 +6,11 @@ Which San Francisco hill does Adam take you to?
 
 An interactive map that races gradient-based optimizers uphill across San Francisco's real terrain (loss = −elevation), plus each optimizer's basins of attraction: which hilltop (local minimum of the loss) it reaches from every starting point in the city.
 
-- **Race:** pick a start by clicking the map or typing an address, intersection or place; SGD, Momentum, Adam and Muon (reduced to 2D) climb side by side, and the map zooms to frame the race (street names and 25 ft contours appear when zoomed in). Any lane can be swapped for Nesterov, RMSprop, Adagrad or Lion.
+- **Race:** pick a start by clicking the map or typing an address, intersection or place; SGD, Momentum, Adam and Muon (reduced to 2D) climb side by side, and the map zooms to frame the race (street names and 25 ft contours appear when zoomed in). Any lane can be swapped for Nesterov, RMSprop, Lion or simulated annealing.
 - **Address search** is offline: `web/src/geocode.js` interpolates between OpenStreetMap address points, intersects street geometries, and matches named places. Nothing typed leaves the browser.
 - **Basins of attraction:** every start point colored by the summit each optimizer reaches (darker = higher = lower loss), plus a map of where they disagree.
-- **Rotation test:** rotate the axes and only the per-coordinate methods (Adam, RMSprop, Adagrad, Lion) change course.
+- **Simulated annealing:** a gradient-free climber you can swap into any lane. It tries random nearby points and sometimes accepts a step downhill, which gets it to the highest summits far more often than any gradient method.
+- **Rotation test:** rotate the axes and only the per-coordinate methods (Adam, RMSprop, Lion) change course.
 - **Muon's real job:** a 64×64 associative-memory toy where Muon learns rare facts as fast as common ones, and Adam only keeps up when the facts line up with the axes.
 
 ## Layout
@@ -48,7 +49,7 @@ Every push to `main` publishes the site: `.github/workflows/publish.yml` runs bo
 - `node tools/try_landmarks.js sgd,momentum,adam,muon '{"rotationDeg":30}'`: where each optimizer goes from well-known places.
 - `node tools/tune_memory.js`: learning-rate search for the matrix toy.
 - `node tools/flow_basins.js 180`: how close each optimizer's basin map is to the terrain's own basins (steepest ascent in tiny steps).
-- `node tools/global_reach.js 120`: how often each optimizer reaches the highest summits at its best settings, and whether the "Aim for the high ground" preset still works if the highest peak is somewhere else.
+- `node tools/global_reach.js 120`: how often each optimizer reaches the highest summits at its best settings, and whether the "Anneal Momentum" preset still works if the highest peak is somewhere else.
 
 ## Data
 

@@ -27,6 +27,7 @@
     "Ocean Beach at Judah": [37.7605, -122.5080],
     "Haight & Ashbury": [37.7699, -122.4469],
     "Dolores Park": [37.7596, -122.4269],
+    "9th & Judah": [37.7623, -122.4665],
   };
 
   // ---------- State ----------
@@ -39,7 +40,7 @@
     };
   }
   let state = defaults();
-  let start = placeStart("16th St BART");
+  let start = placeStart("9th & Judah");
 
   function placeStart(name) {
     const [la, lo] = PLACES[name];
@@ -502,7 +503,13 @@
       const cls = C.classify(T, HILLS, r.x, r.y);
       const p = r.path, n = p.length / 2;
       let arrived = n - 1;
-      if (cls.kind === "hill" || cls.kind === "bump") {
+      if ((cls.kind === "hill" || cls.kind === "bump") && C.OPTIMIZERS[lane.opt].anneal) {
+        // Annealing can touch a summit's height early and wander off again, so
+        // it has arrived once it stays up there.
+        for (let k = n - 1; k >= 0; k--) {
+          if (C.heightAt(T, p[2 * k], p[2 * k + 1]) < cls.top - C.ARRIVED_M) { arrived = Math.min(k + 1, n - 1); break; }
+        }
+      } else if (cls.kind === "hill" || cls.kind === "bump") {
         for (let k = 0; k < n; k++) {
           if (C.heightAt(T, p[2 * k], p[2 * k + 1]) >= cls.top - C.ARRIVED_M) { arrived = k; break; }
         }
@@ -598,6 +605,8 @@
       : `<path d="M11 2.8 L15.6 8 L11 13.2 L6.4 8 Z" fill="${c}"/>`;
     return `<svg class="key" width="22" height="16" viewBox="0 0 22 16" aria-hidden="true"><line x1="0" y1="8" x2="22" y2="8" stroke="${c}" stroke-width="2.4"/>${shape}</svg>`;
   }
+  // "η 100" for the gradient climbers, "T₀ 40" for simulated annealing.
+  const paramText = (lane) => `${C.OPTIMIZERS[lane.opt].sym || "η"} ${lrText(lane)}`;
   function lrText(lane) {
     const v = lane.lr;
     return v >= 100 ? nf(v) : v >= 10 ? nf(v, 0) : v >= 1 ? nf(v, 1) : nf(v, 2);
@@ -636,7 +645,7 @@
         metaLine = `walked ${nf(r.dist / 1000, 1)} km before reaching the county line`;
       }
       return `<li class="score">${laneKeySVG(r.i)}
-        <div class="who"><b>${name}</b><span class="num">η ${lrText(r.lane)}</span></div>
+        <div class="who"><b>${name}</b><span class="num">${paramText(r.lane)}</span></div>
         <div class="where">${o.where}${o.ft ? ` <span class="ft">${nf(o.ft)} ft</span>` : ""}${isBest ? ' <span class="chip">Highest</span>' : ""}</div>
         <div class="meta">${metaLine}</div></li>`;
     }).join("");
@@ -819,7 +828,8 @@
     return off;
   }
 
-  function drawTerrMap(cv, off, codes, labels) {
+  // borders: false skips the basin outlines (annealing's endings are random draws, not basins).
+  function drawTerrMap(cv, off, codes, labels, borders = true) {
     const { w, h, dpr } = sizeCanvas(cv);
     const ctx = cv.getContext("2d");
     ctx.clearRect(0, 0, w, h);
@@ -831,7 +841,7 @@
     ctx.drawImage(off, 0, 0, bw, bh);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(shade, 0, 0, w, h);
-    if (codes) {
+    if (codes && borders) {
       // Borders between basins: a thin gap in the sheet colour.
       ctx.strokeStyle = col.sheet; ctx.globalAlpha = 0.85; ctx.lineWidth = Math.max(1, 0.8 * dpr);
       ctx.beginPath();
@@ -853,7 +863,7 @@
     const { codes } = terr;
     terrCards.forEach((tc, i) => {
       const off = paintCodes(tc.base, codes[i], codeColor);
-      drawTerrMap(tc.base, off, codes[i], { minProm: 30, maxHills: 9, showFt: false, places: false });
+      drawTerrMap(tc.base, off, codes[i], { minProm: 30, maxHills: 9, showFt: false, places: false }, !C.OPTIMIZERS[state.lanes[i].opt].anneal);
       // Stats for the header.
       const c = codes[i];
       let land = 0, stalled = 0, flat = 0, left = 0;
@@ -864,7 +874,7 @@
         if (v >= 0) tops.add(v); else if (v === C.STALLED) stalled++; else if (v === C.BUMP) flat++; else left++;
       }
       const pct = (n) => `${Math.round((100 * n) / land)}%`;
-      const parts = [`${tops.size} basins`];
+      const parts = [C.OPTIMIZERS[state.lanes[i].opt].anneal ? `${tops.size} tops reached, a random draw per start` : `${tops.size} basins`];
       if (stalled / land >= 0.005) parts.push(`out of steps on ${pct(stalled)}`);
       if (flat / land >= 0.005) parts.push(`flat spots ${pct(flat)}`);
       tc.card.querySelector(".stat").textContent = parts.join(" · ");
@@ -996,7 +1006,7 @@
         </select>
         <div class="slider">
           <input type="range" id="lane-${i}-lr" min="0" max="${LR_STEPS}" step="1" value="${lrToSlider(lane.opt, lane.lr)}" aria-label="Climber ${i + 1} learning rate">
-          <output id="lane-${i}-out" class="num">η ${lrText(lane)}</output>
+          <output id="lane-${i}-out" class="num">${paramText(lane)}</output>
           <span class="unit" id="lane-${i}-unit">${C.OPTIMIZERS[lane.opt].lrUnit}</span>
         </div>
       </div>`).join("");
@@ -1005,14 +1015,14 @@
         const opt = ev.target.value;
         state.lanes[i] = { opt, lr: C.OPTIMIZERS[opt].lr[0] };
         $(`lane-${i}-lr`).value = lrToSlider(opt, state.lanes[i].lr);
-        $(`lane-${i}-out`).textContent = `η ${lrText(state.lanes[i])}`;
+        $(`lane-${i}-out`).textContent = paramText(state.lanes[i]);
         $(`lane-${i}-unit`).textContent = C.OPTIMIZERS[opt].lrUnit;
         updateTerrHeaders();
         changed();
       });
       $(`lane-${i}-lr`).addEventListener("input", (ev) => {
         state.lanes[i].lr = sliderToLr(state.lanes[i].opt, Number(ev.target.value));
-        $(`lane-${i}-out`).textContent = `η ${lrText(state.lanes[i])}`;
+        $(`lane-${i}-out`).textContent = paramText(state.lanes[i]);
         changed();
       });
     });
@@ -1042,14 +1052,14 @@
 
   // ---------- Things to try ----------
   const TRIES = [
-    { title: "16th St BART", text: "Momentum and Muon reach Buena Vista Park. SGD and Adam stop one hill short, on Corona Heights.", place: "16th St BART" },
+    { title: "9th & Judah", text: "Three climbers, three hills: the shoulder of Forest Hill, Larsen Peak and Mount Sutro. Now drag β: at 0.5 they all stop on the same shoulder, and near 0.99 they spread across four different summits.", place: "9th & Judah" },
     { title: "Glen Park BART", text: "Only Momentum carries enough speed through a shallow local minimum (a 400 ft rise) to reach Mount Davidson, the global minimum.", place: "Glen Park BART" },
     { title: "Hayes Valley", text: "Three climbers go to Alamo Square. Adam's diagonal steps carry it to Lafayette Park instead.", place: "Hayes Valley" },
     { title: "Rotate the axes 30°", text: "Same start in Hayes Valley. Adam now picks Alamo Square, and SGD, Momentum and Muon trace exactly the same paths as before.", place: "Hayes Valley", set: { rotationDeg: 30 } },
     { title: "Ocean Beach at Judah", text: "The Sunset is a long, gentle ramp. SGD's steps shrink with the slope, so it needs more than twice as many steps as Adam to reach the top.", place: "Ocean Beach at Judah" },
     { title: "Swap Adam for Lion", text: "Lion only moves diagonally, a fixed distance per axis. From Ocean Beach it walks across the whole Sunset to Forest Hill.", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
-    { title: "Decay the learning rate", text: "With a cosine schedule, Muon's fixed-length steps shrink to zero, so it finally settles on its summit instead of circling it.", place: "Haight & Ashbury", set: { cosine: true } },
-    { title: "Aim for the high ground*", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay. From Dolores Park, where the other three stop on Dolores Heights, it climbs on to the highest summits in the city. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Dolores Park", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
+    { title: "Swap in simulated annealing", text: "It ignores the slope and sometimes steps downhill on purpose. From Haight & Ashbury it reaches Mount Sutro. Across the city it reaches a top-four summit 41% of the time; the gradient climbers, 4–6%.", place: "Haight & Ashbury", lanes: { 3: "anneal" } },
+    { title: "Anneal Momentum", text: "Momentum with a huge step (η\u00a0256), β\u00a00.95, noise and cosine decay climbs from Dolores Park to the city's highest summits while the others stop on Dolores Heights. With these settings, tuned for this map, it gets there from half of all starts, up from 6%.", place: "Dolores Park", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
   ];
   $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${t.title}</b><span>${t.text}</span></button>`).join("");
   $("tries").addEventListener("click", (ev) => {
@@ -1075,8 +1085,8 @@
     nesterov: ["Look-ahead momentum", "Momentum that adds the current slope on top of the updated velocity, which damps some of the overshoot."],
     adam: ["Per-axis normalized", "Divides each axis's step by that axis's recent slope size, so it moves about η per axis per step on steep and flat ground alike. That per-axis treatment is also why it favors diagonals."],
     rmsprop: ["Adam without momentum", "Per-axis normalized steps from the current slope. Quick on flat ground, twitchy near summits."],
-    adagrad: ["Shrinking steps", "Divides by the total of all past squared slopes, so its steps keep getting smaller the longer it walks."],
     lion: ["Sign of the momentum", "Moves exactly η along each axis every step, in the direction of a blend of momentum and slope. Every move is diagonal."],
+    anneal: ["No gradient at all", "Tries a random nearby point each step: always takes it if higher, sometimes if lower, less often as it cools. With billions of weights a random move almost never helps, which is why networks use gradients."],
     muon: ["Orthogonalized momentum", "Normalizes the momentum, then runs Muon's Newton-Schulz polish on it. For a 1×2 matrix that leaves a fixed step of about 0.7 η along the momentum."],
   };
   $("climber-cards").innerHTML = Object.entries(C.OPTIMIZERS).map(([k, o]) => `
@@ -1084,7 +1094,6 @@
       <header><h3>${o.label}</h3><span class="tag">${ABOUT[k][0]}</span></header>
       <pre>${o.rule}</pre>
       <p>${ABOUT[k][1]}</p>
-      <p class="tag">Default η = ${o.lr[0]} ${o.lrUnit}</p>
     </article>`).join("");
 
   // ---------- Matrix toy (Muon's real job) ----------

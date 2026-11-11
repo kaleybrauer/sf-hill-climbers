@@ -122,7 +122,6 @@
     <section class="note" id="try">
       <h2>Things to try</h2>
       <div class="tries" id="tries"></div>
-      <p class="tries-note" id="high-ground-note">* About "Aim for the high ground": these settings came from trying many slider combinations and keeping the ones that reached the top of this map most often, so they are tuned on the answer. They work because Mount Davidson sits in the city's biggest block of high ground. Big, noisy steps find broad high ground, not the single highest point: even among runs that reach the four highest summits, only about a third end on Mount Davidson itself. Add a narrow 1,000 ft peak in Bayview and the same settings reach it from fewer than 1 start in 200, less often than the defaults do. Momentum isn't special here either. Tuned the same way, Lion does slightly better (59% of starts, against Momentum's best of 52%), while Adam's best is about 13%.</p>
     </section>
 
     <section class="note" id="climbers">
@@ -136,7 +135,7 @@
       <h2>Why Adam cares which way is north</h2>
       <div class="prose">
         <p>SGD, Momentum and Muon only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.</p>
-        <p>Adam, RMSprop, Adagrad and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along <em>each</em> axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.</p>
+        <p>Adam, RMSprop and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along <em>each</em> axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.</p>
         <p>This matters in real training too. Adam's per-coordinate trick works best when the important directions in a problem line up with individual parameters. The fact-memorizing demo in the next section shows what happens when they don't: with the facts pointing in random directions, Adam's error on rare facts is about five times higher at step 25.</p>
       </div>
     </section>

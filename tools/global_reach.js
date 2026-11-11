@@ -1,4 +1,4 @@
-// Checks the "Aim for the high ground" card and its footnote: how often tuned
+// Checks the "Anneal Momentum" card: how often tuned
 // settings reach the highest summits, and whether that is luck of this map.
 // Usage: node tools/global_reach.js [spacing_m]
 const fs = require("node:fs");
@@ -46,6 +46,9 @@ console.log("preset                  ", reach("momentum", PRESET));
 console.log("preset without noise    ", reach("momentum", { ...PRESET, noise: 0 }));
 console.log("preset without decay    ", reach("momentum", { ...PRESET, cosine: false }));
 console.log("momentum defaults       ", reach("momentum", { ...DEFAULT, lr: 30 }));
+for (const [k, lr] of [["sgd", 100], ["adam", 8], ["muon", 10]]) console.log(`${k} defaults`.padEnd(24), reach(k, { ...DEFAULT, lr }));
+console.log("annealing defaults      ", reach("anneal", { ...DEFAULT, lr: 40 }));
+console.log("annealing, 3000 steps   ", reach("anneal", { ...DEFAULT, lr: 40, steps: 3000 }));
 
 // 2. Each optimizer at the best settings found by sweeping the sliders
 //    (η up to each slider's max, β, noise; cosine decay and 3000 steps).
