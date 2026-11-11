@@ -41,6 +41,7 @@ python3 build.py                              # -> dist/sf-hill-climbers.html an
 - `node tools/territory_stats.js 120 '{"steps":1000}'`: outcome mix per optimizer and how often they disagree.
 - `node tools/try_landmarks.js sgd,momentum,adam,muon '{"rotationDeg":30}'`: where each optimizer goes from well-known places.
 - `node tools/tune_memory.js`: learning-rate search for the matrix toy.
+- `node tools/flow_basins.js 180`: how close each optimizer's basin map is to the terrain's own basins (steepest ascent in tiny steps).
 - `node tools/global_reach.js 120`: how often each optimizer reaches the highest summits at its best settings, and whether the "Aim for the high ground" preset still works if the highest peak is somewhere else.
 
 ## Data

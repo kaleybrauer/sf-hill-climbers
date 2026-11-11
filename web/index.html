@@ -12,7 +12,7 @@
   <header class="masthead">
     <h1>SF Hill Climbers</h1>
     <p class="subtitle">loss = −elevation</p>
-    <p class="lede">Pick a starting point anywhere in the city! Four optimizers will climb as high as they can. The loss is minus the elevation, so every hilltop is a local minimum and <strong>Mount Davidson (928 ft) is the global minimum.</strong></p>
+    <p class="lede">Pick a starting point anywhere in San Francisco! Four optimizers will climb as high as they can. The loss is minus the elevation, so every hilltop is a local minimum and <strong>Mount Davidson (928 ft) is the global minimum.</strong></p>
   </header>
 
   <section class="tool" id="tool" aria-label="Optimizer map">
@@ -52,7 +52,7 @@
         </div>
 
         <div class="view" id="view-territories" role="tabpanel" aria-labelledby="tab-territories" hidden>
-          <p class="terr-intro">Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. Hover to compare; click to race from that spot.</p>
+          <p class="terr-intro">Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. At its default learning rate, SGD's map is almost exactly the terrain's own basins, where walking straight uphill in tiny steps would take you, so it makes a good baseline for the others. Hover to compare; click to race from that spot.</p>
           <div class="legend" id="terr-legend">
             <div class="ramp">
               <div class="ramp-bar" id="ramp-bar"></div>
