@@ -1,6 +1,6 @@
 <title>SF Hill Climbers</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Gradient descent, Momentum, Adam and Muon race uphill across San Francisco's real terrain.">
+<meta name="description" content="{{attr:link preview}}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
@@ -11,8 +11,8 @@
 <div class="page">
   <header class="masthead">
     <h1>SF Hill Climbers</h1>
-    <p class="subtitle">loss = −elevation</p>
-    <p class="lede">Pick a starting point anywhere in San Francisco! Four optimizers will climb as high as they can. The loss decreases with elevation, so every hilltop is a local minimum and Mount Davidson (928 ft) is the global minimum of the loss.</p>
+    <p class="subtitle">{{line:subtitle}}</p>
+    <p class="lede">{{line:intro}}</p>
   </header>
 
   <section class="tool" id="tool" aria-label="Optimizer map">
@@ -52,7 +52,7 @@
         </div>
 
         <div class="view" id="view-territories" role="tabpanel" aria-labelledby="tab-territories" hidden>
-          <p class="terr-intro">Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. At its default learning rate, SGD's map is almost exactly the terrain's own basins, where walking straight uphill in tiny steps would take you, so it makes a good baseline for the others. Hover to compare; click to race from that spot.</p>
+          <p class="terr-intro">{{line:basins intro}}</p>
           <div class="legend" id="terr-legend">
             <div class="ramp">
               <div class="ramp-bar" id="ramp-bar"></div>
@@ -95,7 +95,7 @@
           <div class="field">
             <label for="set-beta">Momentum β <output id="out-beta"></output></label>
             <input type="range" id="set-beta" min="0" max="0.99" step="0.01">
-            <span class="hint">Used by Momentum, Nesterov, Adam (β₁), Lion and Muon</span>
+            <span class="hint">{{line:hint beta}}</span>
           </div>
           <div class="field">
             <label for="set-steps">Steps <output id="out-steps"></output></label>
@@ -104,12 +104,12 @@
           <div class="field">
             <label for="set-noise">Gradient noise σ <output id="out-noise"></output></label>
             <input type="range" id="set-noise" min="0" max="0.08" step="0.005">
-            <span class="hint">Random error added to every slope reading, like a mini-batch</span>
+            <span class="hint">{{line:hint noise}}</span>
           </div>
           <div class="field">
             <label for="set-rot">Rotate the axes <output id="out-rot"></output></label>
             <input type="range" id="set-rot" min="0" max="45" step="1">
-            <span class="hint">The optimizers measure slope along turned axes. Only per-axis methods notice.</span>
+            <span class="hint">{{line:hint rotate}}</span>
           </div>
           <label class="check"><input type="checkbox" id="set-cosine"> Decay the learning rate (cosine schedule)</label>
           <button class="btn" id="reset" type="button">Reset to defaults</button>
@@ -120,32 +120,27 @@
 
   <div class="notes">
     <section class="note" id="try">
-      <h2>Things to try</h2>
+      <h2>{{title:section try}}</h2>
       <div class="tries" id="tries"></div>
     </section>
 
     <section class="note" id="climbers">
-      <h2>The climbers</h2>
-      <p>Each climber is a different optimizer. Each one tries to climb to higher ground after seeing the slope of the ground where it stands, as a two-number gradient g. η is the learning rate you can set in the panel.</p>
-      <p>The default learning rates are sensible picks that are not tuned to make any optimizer win. Where each one ends up depends strongly on η, so try the sliders.</p>
+      <h2>{{title:section climbers}}</h2>
+      {{p:section climbers}}
       <div class="climbers" id="climber-cards"></div>
     </section>
 
     <section class="note" id="north">
-      <h2>Why Adam cares which way is north</h2>
+      <h2>{{title:section north}}</h2>
       <div class="prose">
-        <p>SGD, Momentum and Muon only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.</p>
-        <p>Adam, RMSprop and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along <em>each</em> axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.</p>
-        <p>This matters in real training too. Adam's per-coordinate trick works best when the important directions in a problem line up with individual parameters. The fact-memorizing demo in the next section shows what happens when they don't: with the facts pointing in random directions, Adam's error on rare facts is about five times higher at step 25.</p>
+        {{p:section north}}
       </div>
     </section>
 
     <section class="note" id="muon">
-      <h2>Muon was not built for a 2D map</h2>
+      <h2>{{title:section muon}}</h2>
       <div class="prose">
-        <p>Muon was built for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.</p>
-        <p>On this map the position is just two numbers: a 1×2 matrix with one singular value. The whole procedure collapses to "follow the momentum and always step the same distance." On the map, Muon never quite settles on a summit, because its step never shrinks unless you turn on the learning-rate decay.</p>
-        <p>To see what Muon is actually for, here is a small version of a job it does in a language model: storing facts. A 64×64 matrix has to map 64 keys to 64 values. Facts appear with very different frequencies, like words in text. The most common fact gets 42% of the weight, the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.</p>
+        {{p:section muon}}
       </div>
       <div class="memory">
         <div class="memory-controls">
@@ -178,18 +173,14 @@
     </section>
 
     <section class="note" id="caveat">
-      <h2>What a map can't show</h2>
+      <h2>{{title:section caveat}}</h2>
       <div class="prose">
-        <p>A map has two dimensions. A language model has billions, and two things change at that scale.</p>
-        <p><strong>True local minima get rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" story on this page is real in two dimensions and much weaker in a big network.</p>
-        <p><strong>The minima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, a bit like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
-        <p>So read the basin maps as intuition for how each update rule moves, not as a prediction of where a real model ends up.</p>
+        {{p:section caveat}}
       </div>
     </section>
 
     <footer class="colophon">
-      <p>Elevation from AWS Terrain Tiles, which use bare-earth USGS 3DEP lidar for San Francisco, so buildings are removed. It is resampled to a 20 m grid and smoothed over about 35 m so street cuts and retaining walls don't count as hills. The optimizers climb that smoothed surface, whose tops sit roughly 10 to 40 feet below the summit heights shown.</p>
-      <p>Summit names, streets, places and addresses © OpenStreetMap contributors. Address search runs entirely in your browser: what you type is never sent anywhere. A climber has arrived when it is within 2.5 m (8 ft) of the top it would reach by walking straight uphill from where it stopped. A flat spot is a top with under 30 cm of prominence. Runs are deterministic and give the same result in every browser; noise uses a fixed seed for each starting point.</p>
+      {{p:footer}}
     </footer>
   </div>
 </div>
@@ -201,6 +192,7 @@
 <script>
 /*{{GEOCODE}}*/
 </script>
+<script type="application/json" id="page-text">{{TEXT}}</script>
 <script>
 /*{{APP}}*/
 </script>

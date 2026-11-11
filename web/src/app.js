@@ -3,6 +3,9 @@
 (function () {
   "use strict";
   const C = window.SFCore;
+  // The words on the page come from web/text.md (inlined by build.py).
+  const TEXT = JSON.parse(document.getElementById("page-text").textContent);
+  const tpl = (name, vals) => TEXT.templates[name].map((p) => `<p>${p.replace(/\{(\w+)\}/g, (m, k) => (k in vals ? vals[k] : m))}</p>`).join("");
   const $ = (id) => document.getElementById(id);
   const FT = 3.28084;
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -32,6 +35,8 @@
 
   // ---------- State ----------
   const DEFAULT_LANES = ["sgd", "momentum", "adam", "muon"];
+  // Menus and climber cards list the four default racers first, then the swap-ins.
+  const CLIMBER_ORDER = [...DEFAULT_LANES, ...Object.keys(C.OPTIMIZERS).filter((k) => !DEFAULT_LANES.includes(k))];
   const SHAPES = ["circle", "square", "triangle", "diamond"];
   function defaults() {
     return {
@@ -908,11 +913,13 @@
     const pairs = Object.entries(pair).sort((a, b) => b[1] - a[1]);
     const [hiA, hiB] = pairs[0] ? pairs[0][0].split("-").map(Number) : [0, 1];
     const lo = pairs[pairs.length - 1] ? pairs[pairs.length - 1][0].split("-").map(Number) : [0, 1];
-    $("dis-text").innerHTML = `
-      <p class="big">All four agree on <span class="num">${pct(counts[1])}%</span> of the city.</p>
-      <p>On the other <span class="num">${100 - pct(counts[1])}%</span>, at least one climber ends somewhere else: two different endings on ${pctText(counts[2])}, three on ${pctText(counts[3])}, and all four different on ${pctText(counts[4])}.</p>
-      <p>The most different pair is <strong>${names[hiA]}</strong> and <strong>${names[hiB]}</strong>, which disagree on ${pct(pairs[0] ? pairs[0][1] : 0)}% of starting points. The most alike are ${names[lo[0]]} and ${names[lo[1]]}, at ${pct(pairs.length ? pairs[pairs.length - 1][1] : 0)}%.</p>
-      <p>Disagreement collects along ridges and saddles, where a small difference in the first few steps decides which side of the ridge a climber goes down, and on flat ground, where some climbers keep walking and others stop.</p>`;
+    const num = (v) => `<span class="num">${v}</span>`;
+    $("dis-text").innerHTML = tpl("disagreement", {
+      agree: num(`${pct(counts[1])}%`), other: num(`${100 - pct(counts[1])}%`),
+      two: pctText(counts[2]), three: pctText(counts[3]), four: pctText(counts[4]),
+      pair_a: names[hiA], pair_b: names[hiB], pair_pct: `${pct(pairs[0] ? pairs[0][1] : 0)}%`,
+      alike_a: names[lo[0]], alike_b: names[lo[1]], alike_pct: `${pct(pairs.length ? pairs[pairs.length - 1][1] : 0)}%`,
+    }).replace("<p>", '<p class="big">');
   }
 
   function cellAt(x, y) {
@@ -1002,7 +1009,7 @@
       <div class="lane">
         ${laneKeySVG(i)}
         <select id="lane-${i}-opt" aria-label="Climber ${i + 1} optimizer">
-          ${Object.entries(C.OPTIMIZERS).map(([k, o]) => `<option value="${k}"${k === lane.opt ? " selected" : ""}>${o.label}</option>`).join("")}
+          ${CLIMBER_ORDER.map((k) => `<option value="${k}"${k === lane.opt ? " selected" : ""}>${C.OPTIMIZERS[k].label}</option>`).join("")}
         </select>
         <div class="slider">
           <input type="range" id="lane-${i}-lr" min="0" max="${LR_STEPS}" step="1" value="${lrToSlider(lane.opt, lane.lr)}" aria-label="Climber ${i + 1} learning rate">
@@ -1052,16 +1059,16 @@
 
   // ---------- Things to try ----------
   const TRIES = [
-    { title: "9th & Judah", text: "Three climbers, three hills: the shoulder of Forest Hill, Larsen Peak and Mount Sutro. Now drag β: at 0.5 they all stop on the same shoulder, and near 0.99 they spread across four different summits.", place: "9th & Judah" },
-    { title: "Glen Park BART", text: "Only Momentum carries enough speed through a shallow local minimum (a 400 ft rise) to reach Mount Davidson, the global minimum.", place: "Glen Park BART" },
-    { title: "Hayes Valley", text: "Three climbers go to Alamo Square. Adam's diagonal steps carry it to Lafayette Park instead.", place: "Hayes Valley" },
-    { title: "Rotate the axes 30°", text: "Same start in Hayes Valley. Adam now picks Alamo Square, and SGD, Momentum and Muon trace exactly the same paths as before.", place: "Hayes Valley", set: { rotationDeg: 30 } },
-    { title: "Ocean Beach at Judah", text: "The Sunset is a long, gentle ramp. SGD's steps shrink with the slope, so it needs more than twice as many steps as Adam to reach the top.", place: "Ocean Beach at Judah" },
-    { title: "Swap Adam for Lion", text: "Lion only moves diagonally, a fixed distance per axis. From Ocean Beach it walks across the whole Sunset to Forest Hill.", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
-    { title: "Swap in simulated annealing", text: "It ignores the slope and sometimes steps downhill on purpose. From Haight & Ashbury it reaches Mount Sutro. Across the city it reaches a top-four summit 41% of the time; the gradient climbers, 4–6%.", place: "Haight & Ashbury", lanes: { 3: "anneal" } },
-    { title: "Anneal Momentum", text: "Momentum with a huge step (η\u00a0256), β\u00a00.95, noise and cosine decay climbs from Dolores Park to the city's highest summits while the others stop on Dolores Heights. With these settings, tuned for this map, it gets there from half of all starts, up from 6%.", place: "Dolores Park", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
+    { id: "judah", place: "9th & Judah" },
+    { id: "glen", place: "Glen Park BART" },
+    { id: "hayes", place: "Hayes Valley" },
+    { id: "rotate", place: "Hayes Valley", set: { rotationDeg: 30 } },
+    { id: "ocean", place: "Ocean Beach at Judah" },
+    { id: "lion", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
+    { id: "anneal", place: "Haight & Ashbury", lanes: { 3: "anneal" } },
+    { id: "anneal-momentum", place: "Dolores Park", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
   ];
-  $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${t.title}</b><span>${t.text}</span></button>`).join("");
+  $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${TEXT.cards[t.id].title}</b><span>${TEXT.cards[t.id].html}</span></button>`).join("");
   $("tries").addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-try]");
     if (!b) return;
@@ -1079,21 +1086,11 @@
   });
 
   // ---------- Climber cards ----------
-  const ABOUT = {
-    sgd: ["Plain gradient descent", "Steps in proportion to the slope. Steep ground means big strides and flat ground means tiny ones, so it crawls across the Sunset and the Mission."],
-    momentum: ["Heavy ball", "Keeps a running velocity. It speeds up on long slopes, carries through shallow local minima instead of stopping in them, and overshoots before settling."],
-    nesterov: ["Look-ahead momentum", "Momentum that adds the current slope on top of the updated velocity, which damps some of the overshoot."],
-    adam: ["Per-axis normalized", "Divides each axis's step by that axis's recent slope size, so it moves about η per axis per step on steep and flat ground alike. That per-axis treatment is also why it favors diagonals."],
-    rmsprop: ["Adam without momentum", "Per-axis normalized steps from the current slope. Quick on flat ground, twitchy near summits."],
-    lion: ["Sign of the momentum", "Moves exactly η along each axis every step, in the direction of a blend of momentum and slope. Every move is diagonal."],
-    anneal: ["No gradient at all", "Tries a random nearby point each step: always takes it if higher, sometimes if lower, less often as it cools. With billions of weights a random move almost never helps, which is why networks use gradients."],
-    muon: ["Orthogonalized momentum", "Normalizes the momentum, then runs Muon's Newton-Schulz polish on it. For a 1×2 matrix that leaves a fixed step of about 0.7 η along the momentum."],
-  };
-  $("climber-cards").innerHTML = Object.entries(C.OPTIMIZERS).map(([k, o]) => `
+  $("climber-cards").innerHTML = CLIMBER_ORDER.map((k) => [k, C.OPTIMIZERS[k]]).map(([k, o]) => `
     <article class="climber">
-      <header><h3>${o.label}</h3><span class="tag">${ABOUT[k][0]}</span></header>
+      <header><h3>${o.label}</h3><span class="tag">${TEXT.climbers[k].tag}</span></header>
       <pre>${o.rule}</pre>
-      <p>${ABOUT[k][1]}</p>
+      <p>${TEXT.climbers[k].html}</p>
     </article>`).join("");
 
   // ---------- Matrix toy (Muon's real job) ----------
@@ -1207,9 +1204,9 @@
     const at = (k, s) => rareMean(res[k][s]).toFixed(2);
     const other = mem.results[mem.rotated ? "aln" : "rot"];
     const adamOther = other ? rareMean(other.adam[mem.step]).toFixed(2) : "…";
-    $("mem-findings").innerHTML = `
-      <p>At step <span class="num">${mem.step}</span>, error on the rarest half of the facts: SGD <span class="num">${at("sgd", mem.step)}</span>, Adam <span class="num">${at("adam", mem.step)}</span>, Muon <span class="num">${at("muon", mem.step)}</span>.</p>
-      <p>SGD's learning rate is capped by the most common fact, so rare facts barely move. Muon gives every direction of the update the same size, so rare facts learn about as fast as common ones. Adam's per-number normalization ${mem.rotated ? `only helps when the facts line up with the axes: there, its rare-fact error at this step is <span class="num">${adamOther}</span>.` : `works well here because each fact sits on its own axis. With the facts in random directions its rare-fact error at this step is <span class="num">${adamOther}</span>.`} SGD and Muon give identical results either way.</p>`;
+    const num = (v) => `<span class="num">${v}</span>`;
+    const vals = { step: num(mem.step), sgd: num(at("sgd", mem.step)), adam: num(at("adam", mem.step)), muon: num(at("muon", mem.step)), adam_other: num(adamOther) };
+    $("mem-findings").innerHTML = mem.rotated ? tpl("matrix random", vals) : tpl("matrix aligned", vals);
   }
   $("mem-rot").addEventListener("click", () => { mem.rotated = true; $("mem-rot").setAttribute("aria-pressed", "true"); $("mem-aln").setAttribute("aria-pressed", "false"); renderMemory(); });
   $("mem-aln").addEventListener("click", () => { mem.rotated = false; $("mem-aln").setAttribute("aria-pressed", "true"); $("mem-rot").setAttribute("aria-pressed", "false"); renderMemory(); });

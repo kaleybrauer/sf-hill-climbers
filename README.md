@@ -39,6 +39,10 @@ python3 build.py                              # -> docs/index.html and dist/sf-h
 
 `docs/` is build output (gitignored): `docs/index.html` is the complete page, and `docs/preview.png` is the link-preview card. `tools/make_preview.py` redraws that card from the built page (it needs Chrome and Pillow); the workflow runs it on every deploy, and `web/preview.png` is the fallback copy. Open it directly to view the page locally. `dist/sf-hill-climbers.html` is the same page without `<html>`/`<head>` wrappers, for publishing as a Claude artifact.
 
+## Editing the words
+
+All the prose on the page lives in [`web/text.md`](web/text.md): the intro, every section, the Things to try cards, the climber descriptions, the footer, and the sentences around generated numbers (written with `{placeholders}`). Edit it anywhere, including GitHub's web editor, and push; the note at the top of the file explains the format. The build stops with a message if a block is missing, misnamed or unused, so a typo can't break the live site. Short labels such as tab names, buttons and legends are in `web/index.html`.
+
 ## Publishing
 
 Every push to `main` publishes the site: `.github/workflows/publish.yml` runs both test suites, runs `build.py`, redraws the link-preview card, and deploys `docs/` to GitHub Pages (https://www.kaleybrauer.com/sf-hill-climbers/). That includes edits made in GitHub's web editor, so to fix wording, edit `web/index.html` on GitHub and the site updates a minute or two later. If a test fails, nothing is deployed and the current site stays up; the Actions tab shows each run.
