@@ -31,6 +31,13 @@ jobs:
         run: node tests/core.test.js && node tests/geocode.test.js
       - name: Build
         run: python3 build.py
+      # Redraw the link-preview card from the page just built. If this fails,
+      # the committed web/preview.png is used instead.
+      - name: Link-preview image
+        continue-on-error: true
+        run: |
+          pip install --quiet pillow
+          python3 tools/make_preview.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs

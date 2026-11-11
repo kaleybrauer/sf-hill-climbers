@@ -36,11 +36,11 @@ node tests/core.test.js && node tests/geocode.test.js
 python3 build.py                              # -> docs/index.html and dist/sf-hill-climbers.html
 ```
 
-`docs/` is build output (gitignored): `docs/index.html` is the complete page, with `docs/preview.png` copied from `web/preview.png` for link previews. Open it directly to view the page locally. `dist/sf-hill-climbers.html` is the same page without `<html>`/`<head>` wrappers, for publishing as a Claude artifact.
+`docs/` is build output (gitignored): `docs/index.html` is the complete page, and `docs/preview.png` is the link-preview card. `tools/make_preview.py` redraws that card from the built page (it needs Chrome and Pillow); the workflow runs it on every deploy, and `web/preview.png` is the fallback copy. Open it directly to view the page locally. `dist/sf-hill-climbers.html` is the same page without `<html>`/`<head>` wrappers, for publishing as a Claude artifact.
 
 ## Publishing
 
-Every push to `main` publishes the site: `.github/workflows/publish.yml` runs both test suites, runs `build.py`, and deploys `docs/` to GitHub Pages (https://www.kaleybrauer.com/sf-hill-climbers/). That includes edits made in GitHub's web editor, so to fix wording, edit `web/index.html` on GitHub and the site updates a minute or two later. If a test fails, nothing is deployed and the current site stays up; the Actions tab shows each run.
+Every push to `main` publishes the site: `.github/workflows/publish.yml` runs both test suites, runs `build.py`, redraws the link-preview card, and deploys `docs/` to GitHub Pages (https://www.kaleybrauer.com/sf-hill-climbers/). That includes edits made in GitHub's web editor, so to fix wording, edit `web/index.html` on GitHub and the site updates a minute or two later. If a test fails, nothing is deployed and the current site stays up; the Actions tab shows each run.
 
 ## Useful tools
 

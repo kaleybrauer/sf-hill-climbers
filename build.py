@@ -2,6 +2,7 @@
 
 Run:  python3 build.py   ->  docs/ (the GitHub Pages site) and dist/sf-hill-climbers.html
 """
+import hashlib
 import pathlib
 import shutil
 
@@ -30,12 +31,14 @@ def main():
     # A standalone copy for ordinary web hosting: the artifact viewer normally
     # supplies the document shell and this small reset.
     head, body = page.split('<div class="page">', 1)
+    # ?v= changes with the image, so chat apps fetch a new preview instead of a cached one.
+    version = hashlib.sha1((WEB / "preview.png").read_bytes()).hexdigest()[:8]
     site = (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<meta property="og:title" content="SF Hill Climbers">\n'
         f'<meta property="og:url" content="{SITE_URL}">\n'
-        f'<meta property="og:image" content="{SITE_URL}preview.png">\n'
+        f'<meta property="og:image" content="{SITE_URL}preview.png?v={version}">\n'
         '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
         '<meta name="twitter:card" content="summary_large_image">\n'
         '<meta property="og:description" content="Gradient descent, Momentum, Adam and Muon race uphill across '
