@@ -43,7 +43,7 @@ def main():
         'body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>\n'
         + head.strip() + '\n</head>\n<body>\n<div class="page">' + body + '\n</body>\n</html>\n'
     )
-    standalone = ROOT / "site" / "index.html"
+    standalone = ROOT / "docs" / "index.html"
     standalone.parent.mkdir(exist_ok=True)
     standalone.write_text(site)
     print(f"wrote {standalone.relative_to(ROOT)} ({standalone.stat().st_size / 1e6:.2f} MB)")

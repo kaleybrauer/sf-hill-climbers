@@ -1,5 +1,7 @@
 # SF Hill Climbers
 
+**https://www.kaleybrauer.com/sf-hill-climbers/**
+
 Which San Francisco hill does Adam take you to?
 
 An interactive map that races gradient-based optimizers uphill across San Francisco's real terrain (loss = −elevation), plus each optimizer's basins of attraction: which hilltop (local minimum of the loss) it reaches from every starting point in the city.
@@ -31,10 +33,10 @@ tools/                      analysis scripts used to pick defaults and verify pa
 python3 -m venv .venv && .venv/bin/pip install numpy scipy pillow
 .venv/bin/python pipeline/build_terrain.py   # downloads tiles/OSM once into data/raw (gitignored)
 node tests/core.test.js && node tests/geocode.test.js
-python3 build.py                              # -> dist/sf-hill-climbers.html and site/index.html
+python3 build.py                              # -> docs/index.html and dist/sf-hill-climbers.html
 ```
 
-`dist/sf-hill-climbers.html` is a page body without `<html>`/`<head>` wrappers (it is published as a Claude artifact, which adds them). `site/index.html` is the same page as a complete document with link-preview tags; it is gitignored here and published by copying it into the public [sf-hill-climbers](https://github.com/kaleybrauer/sf-hill-climbers) repo (GitHub Pages, https://www.kaleybrauer.com/sf-hill-climbers/). Open it directly to view the page locally.
+`docs/index.html` is the live page: GitHub Pages serves the `docs/` folder of `main`, so pushing a rebuilt page publishes it (`docs/preview.png` is the link-preview image). Open it directly to view the page locally. Edit `web/`, not `docs/index.html`, since the build overwrites it. `dist/sf-hill-climbers.html` is the same page without `<html>`/`<head>` wrappers, for publishing as a Claude artifact.
 
 ## Useful tools
 
