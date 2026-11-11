@@ -96,14 +96,6 @@ button, select, input { font: inherit; color: inherit; }
 
 /* ---------- Masthead ---------- */
 .masthead { display: grid; gap: 10px; max-width: 64ch; }
-.eyebrow {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--step--1);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--brown);
-}
 .masthead h1 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -111,6 +103,12 @@ button, select, input { font: inherit; color: inherit; }
   line-height: 0.95;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+}
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  color: var(--ink-2);
+  margin-top: -4px;
 }
 .lede { font-size: var(--step-1); color: var(--ink-2); line-height: 1.5; }
 .lede strong { color: var(--ink); font-weight: 600; }
@@ -131,7 +129,8 @@ button, select, input { font: inherit; color: inherit; }
   padding: 10px 14px;
   border-bottom: 1px solid var(--rule);
 }
-.tabs { display: flex; gap: 4px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+@media (max-width: 460px) { .tab-more { display: none; } }
 .tab {
   border: 1px solid transparent;
   background: none;
@@ -385,6 +384,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
 .try {
   text-align: left;
   display: grid;
+  align-content: start;
   gap: 4px;
   padding: 12px 14px;
   border: 1px solid var(--rule);
@@ -439,16 +439,16 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
 
 <div class="page">
   <header class="masthead">
-    <div class="eyebrow">San Francisco · loss = −elevation</div>
     <h1>SF Hill Climbers</h1>
-    <p class="lede">Pick a starting point anywhere in the city. Four optimizers try to climb as high as they can, and each one only feels the slope under its feet. <strong>Mount Davidson (928 ft) is the global optimum.</strong> Most starting points never reach it.</p>
+    <p class="subtitle">loss = −elevation</p>
+    <p class="lede">Pick a starting point anywhere in the city. Four optimizers climb as high as they can, feeling only the slope under their feet. The loss is minus the elevation, so every hilltop is a local minimum and <strong>Mount Davidson (928 ft) is the global minimum.</strong> Most starting points never reach it.</p>
   </header>
 
   <section class="tool" id="tool" aria-label="Optimizer map">
     <div class="tool-head">
       <div class="tabs" role="tablist" aria-label="View">
-        <button class="tab" role="tab" id="tab-race" aria-selected="true" aria-controls="view-race">Race from one spot</button>
-        <button class="tab" role="tab" id="tab-territories" aria-selected="false" aria-controls="view-territories">Territory maps</button>
+        <button class="tab" role="tab" id="tab-race" aria-selected="true" aria-controls="view-race">Race<span class="tab-more"> from one spot</span></button>
+        <button class="tab" role="tab" id="tab-territories" aria-selected="false" aria-controls="view-territories">Basins of attraction</button>
       </div>
       <div class="status" id="status" aria-live="polite"></div>
     </div>
@@ -481,7 +481,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
         </div>
 
         <div class="view" id="view-territories" role="tabpanel" aria-labelledby="tab-territories" hidden>
-          <p class="terr-intro">Every patch of color is a territory: all the starting points from which that optimizer ends on the same top. Darker violet means a higher summit, which is a better optimum. Hover to compare; click to race from that spot.</p>
+          <p class="terr-intro">Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. Hover to compare; click to race from that spot.</p>
           <div class="legend" id="terr-legend">
             <div class="ramp">
               <div class="ramp-bar" id="ramp-bar"></div>
@@ -556,7 +556,19 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     <section class="note" id="climbers">
       <h2>The climbers</h2>
       <p>Each one sees the same thing at every step: the slope of the ground where it stands, as a two-number gradient g. They differ only in what they do with it. η is the learning rate you can set in the panel.</p>
+      <p>The default learning rates are sensible picks, not tuned to make any optimizer win. Where each one ends up depends on η, so try the sliders before drawing conclusions.</p>
       <div class="climbers" id="climber-cards"></div>
+    </section>
+
+    <section class="note" id="speed">
+      <h2>Why Momentum goes furthest</h2>
+      <div class="prose">
+        <p>To reach a higher summit, a climber usually has to go back down through a valley first. In loss terms, it has to climb out of a local minimum. SGD has no memory, so it stops at the first top it finds. Momentum keeps a running velocity and its steps grow with the slope, so speed picked up on the way up one hill can carry it over the top, across the next valley and up the far side.</p>
+        <p>Adam, Lion and Muon have a speed limit. They normalize their steps, so a step is about η long however steep the ground is. From Chinatown, with the learning rates that work best for each, Momentum's longest step is 275 m while Adam, Lion and Muon never pass 45 m. Most of Adam's steps are only a few meters, because it divides by a long memory of how steep the ground has been.</p>
+        <p>Lion and Muon still get partway by taking steps long enough to hop over small hills. With the best settings from a sweep of the sliders (a big η, noise and cosine decay), the share of starts that end on one of the four highest summits is 50% for Momentum, 46% for Lion, 31% for Nesterov, 25% for Muon and 10 to 12% for SGD, Adam, RMSprop and Adagrad.</p>
+        <p>Even Momentum is partly lucky. Those settings were chosen by checking how often they reach the top of this particular map, and they work because Mount Davidson sits in the city's biggest block of high ground. Large, noisy steps find broad high ground, not the single highest point: even among runs that reach the four highest summits, only about a third end on Mount Davidson itself. Add a narrow 1,000 ft peak in Bayview and the same settings reach it from fewer than 1 start in 200, less often than the defaults do. Make that peak a couple of kilometers wide and they find it far more often. It is the familiar idea that big, noisy steps favor wide minima over sharp ones.</p>
+        <p>In real training the speed limit is the point. A normalized step can't blow up, and one learning rate works for parameters whose gradients differ by orders of magnitude. Finding the global minimum isn't the goal there anyway, for the reasons under "What a map can't show" below.</p>
+      </div>
     </section>
 
     <section class="note" id="north">
@@ -609,9 +621,9 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
       <h2>What a map can't show</h2>
       <div class="prose">
         <p>A map has two dimensions. A language model has billions, and two things change at that scale.</p>
-        <p><strong>True local optima get rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" story on this page is real in two dimensions and much weaker in a big network.</p>
-        <p><strong>The optima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, a bit like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
-        <p>So read the territory maps as intuition for how each update rule moves, not as a prediction of where a real model ends up.</p>
+        <p><strong>True local minima get rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" story on this page is real in two dimensions and much weaker in a big network.</p>
+        <p><strong>The minima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, a bit like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
+        <p>So read the basin maps as intuition for how each update rule moves, not as a prediction of where a real model ends up.</p>
       </div>
     </section>
 
@@ -1272,7 +1284,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
 
 </script>
 <script>
-// SF Hill Climbers: map rendering, the race, territory maps, controls and the
+// SF Hill Climbers: map rendering, the race, basin maps, controls and the
 // matrix toy. The optimizers themselves live in core.js (window.SFCore).
 (function () {
   "use strict";
@@ -1300,6 +1312,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     "Hayes Valley": [37.7765, -122.4242],
     "Ocean Beach at Judah": [37.7605, -122.5080],
     "Haight & Ashbury": [37.7699, -122.4469],
+    "Chinatown": [37.7955, -122.4064],
   };
 
   // ---------- State ----------
@@ -1388,7 +1401,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
         const { s, wet } = shadeAt((px + 0.5) / S * T.cell, (py + 0.5) / S * T.cell);
         const o = 4 * (py * w + px);
         reliefPixel(ir.data, o, s, wet, pal);
-        // Shade-only overlay for the territory maps: dark or light, mostly transparent.
+        // Shade-only overlay for the basin maps: dark or light, mostly transparent.
         is.data[o] = is.data[o + 1] = is.data[o + 2] = s < 0 ? 0 : 255;
         is.data[o + 3] = (s < 0 ? Math.min(0.5, -s * 0.55) : Math.min(0.35, s * 0.7)) * 255 * (1 - wet);
         iw.data[o] = pal.Wa[0]; iw.data[o + 1] = pal.Wa[1]; iw.data[o + 2] = pal.Wa[2]; iw.data[o + 3] = wet * 255;
@@ -1985,7 +1998,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
   }
   $("search").addEventListener("submit", (ev) => { ev.preventDefault(); doSearch(); });
 
-  // ---------- Territory maps ----------
+  // ---------- Basins of attraction ----------
   const TERR_SPACING = [180, 90];
   const terr = { sig: null, level: -1, codes: null, gw: 0, gh: 0, spacing: 0, job: 0, progress: 0, running: false };
   const terrCards = [];
@@ -2065,7 +2078,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
   function setStatus() {
     const st = $("status");
     if (terr.running) {
-      st.innerHTML = `Mapping territories <span class="num">${Math.round(terr.progress * 100)}%</span><span class="bar"><i style="width:${terr.progress * 100}%"></i></span>`;
+      st.innerHTML = `Mapping basins <span class="num">${Math.round(terr.progress * 100)}%</span><span class="bar"><i style="width:${terr.progress * 100}%"></i></span>`;
     } else if (activeTab === "territories" && terr.codes) {
       st.textContent = `Each map runs ${nf(terr.landCount)} starting points, ${terr.spacing} m apart`;
     } else {
@@ -2098,14 +2111,14 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = col.water; ctx.fillRect(0, 0, w, h);
     ctx.drawImage(landMask, 0, 0, w, h);
-    // Territory cells cover whole spacing blocks; their right/bottom edge may overhang the grid.
+    // Basin cells cover whole spacing blocks; their right/bottom edge may overhang the grid.
     const bw = terr.gw * terr.spacing / T.widthM * w, bh = terr.gh * terr.spacing / T.heightM * h;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(off, 0, 0, bw, bh);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(shade, 0, 0, w, h);
     if (codes) {
-      // Borders between territories: a thin gap in the sheet colour.
+      // Borders between basins: a thin gap in the sheet colour.
       ctx.strokeStyle = col.sheet; ctx.globalAlpha = 0.85; ctx.lineWidth = Math.max(1, 0.8 * dpr);
       ctx.beginPath();
       const cw = bw / terr.gw, ch = bh / terr.gh, { gw, gh } = terr;
@@ -2137,11 +2150,11 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
         if (v >= 0) tops.add(v); else if (v === C.STALLED) stalled++; else if (v === C.BUMP) flat++; else left++;
       }
       const pct = (n) => `${Math.round((100 * n) / land)}%`;
-      const parts = [`${tops.size} tops`];
+      const parts = [`${tops.size} basins`];
       if (stalled / land >= 0.005) parts.push(`out of steps on ${pct(stalled)}`);
       if (flat / land >= 0.005) parts.push(`flat spots ${pct(flat)}`);
       tc.card.querySelector(".stat").textContent = parts.join(" · ");
-      tc.over.setAttribute("aria-label", `${C.OPTIMIZERS[state.lanes[i].opt].label} territory map: ${parts.join(", ")}`);
+      tc.over.setAttribute("aria-label", `${C.OPTIMIZERS[state.lanes[i].opt].label} basins of attraction: ${parts.join(", ")}`);
       sizeCanvas(tc.over);
     });
     renderDisagreement();
@@ -2316,13 +2329,13 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
   // ---------- Things to try ----------
   const TRIES = [
     { title: "16th St BART", text: "Momentum and Muon reach Buena Vista Park. SGD and Adam stop one hill short, on Corona Heights.", place: "16th St BART" },
-    { title: "Glen Park BART", text: "Only Momentum builds enough speed to roll past a 400 ft rise and reach Mount Davidson, the top of the city.", place: "Glen Park BART" },
+    { title: "Glen Park BART", text: "Only Momentum carries enough speed through a shallow local minimum (a 400 ft rise) to reach Mount Davidson, the global minimum.", place: "Glen Park BART" },
     { title: "Hayes Valley", text: "Three climbers go to Alamo Square. Adam's diagonal steps carry it to Lafayette Park instead.", place: "Hayes Valley" },
     { title: "Rotate the axes 30°", text: "Same start in Hayes Valley. Adam now picks Alamo Square, and SGD, Momentum and Muon trace exactly the same paths as before.", place: "Hayes Valley", set: { rotationDeg: 30 } },
     { title: "Ocean Beach at Judah", text: "The Sunset is a long, gentle ramp. SGD's steps shrink with the slope, so it needs more than twice as many steps as Adam to reach the top.", place: "Ocean Beach at Judah" },
     { title: "Swap Adam for Lion", text: "Lion only moves diagonally, a fixed distance per axis. From Ocean Beach it walks across the whole Sunset to Forest Hill.", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
-    { title: "Add gradient noise", text: "Noisy slope readings (σ = 0.03) shake SGD and Adam past Corona Heights and up to Buena Vista Park. Muon now stops at Corona Heights.", place: "16th St BART", set: { noise: 0.03 } },
     { title: "Decay the learning rate", text: "With a cosine schedule, Muon's fixed-length steps shrink to zero, so it finally settles on its summit instead of circling it.", place: "Haight & Ashbury", set: { cosine: true } },
+    { title: "Aim for the high ground", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay, and it crosses from Chinatown to Mount Davidson. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Chinatown", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
   ];
   $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${t.title}</b><span>${t.text}</span></button>`).join("");
   $("tries").addEventListener("click", (ev) => {
@@ -2332,6 +2345,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     state = defaults();
     Object.assign(state, t.set || {});
     for (const [i, opt] of Object.entries(t.lanes || {})) state.lanes[i] = { opt, lr: C.OPTIMIZERS[opt].lr[0] };
+    for (const [i, lr] of Object.entries(t.lr || {})) state.lanes[i].lr = lr;
     start = placeStart(t.place);
     $("race-hint").hidden = true;
     buildLanes(); syncShared(); updateTerrHeaders();
@@ -2343,7 +2357,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
   // ---------- Climber cards ----------
   const ABOUT = {
     sgd: ["Plain gradient descent", "Steps in proportion to the slope. Steep ground means big strides and flat ground means tiny ones, so it crawls across the Sunset and the Mission."],
-    momentum: ["Heavy ball", "Keeps a running velocity. It speeds up on long slopes, rolls past small rises, overshoots summits and swings back."],
+    momentum: ["Heavy ball", "Keeps a running velocity. It speeds up on long slopes, carries through shallow local minima instead of stopping in them, and overshoots before settling."],
     nesterov: ["Look-ahead momentum", "Momentum that adds the current slope on top of the updated velocity, which damps some of the overshoot."],
     adam: ["Per-axis normalized", "Divides each axis's step by that axis's recent slope size, so it moves about η per axis per step on steep and flat ground alike. That per-axis treatment is also why it favors diagonals."],
     rmsprop: ["Adam without momentum", "Per-axis normalized steps from the current slope. Quick on flat ground, twitchy near summits."],

@@ -10,16 +10,16 @@
 
 <div class="page">
   <header class="masthead">
-    <div class="eyebrow">San Francisco · loss = −elevation</div>
     <h1>SF Hill Climbers</h1>
-    <p class="lede">Pick a starting point anywhere in the city. Four optimizers try to climb as high as they can, and each one only feels the slope under its feet. <strong>Mount Davidson (928 ft) is the global optimum.</strong> Most starting points never reach it.</p>
+    <p class="subtitle">loss = −elevation</p>
+    <p class="lede">Pick a starting point anywhere in the city. Four optimizers climb as high as they can, feeling only the slope under their feet. The loss is minus the elevation, so every hilltop is a local minimum and <strong>Mount Davidson (928 ft) is the global minimum.</strong> Most starting points never reach it.</p>
   </header>
 
   <section class="tool" id="tool" aria-label="Optimizer map">
     <div class="tool-head">
       <div class="tabs" role="tablist" aria-label="View">
-        <button class="tab" role="tab" id="tab-race" aria-selected="true" aria-controls="view-race">Race from one spot</button>
-        <button class="tab" role="tab" id="tab-territories" aria-selected="false" aria-controls="view-territories">Territory maps</button>
+        <button class="tab" role="tab" id="tab-race" aria-selected="true" aria-controls="view-race">Race<span class="tab-more"> from one spot</span></button>
+        <button class="tab" role="tab" id="tab-territories" aria-selected="false" aria-controls="view-territories">Basins of attraction</button>
       </div>
       <div class="status" id="status" aria-live="polite"></div>
     </div>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="view" id="view-territories" role="tabpanel" aria-labelledby="tab-territories" hidden>
-          <p class="terr-intro">Every patch of color is a territory: all the starting points from which that optimizer ends on the same top. Darker violet means a higher summit, which is a better optimum. Hover to compare; click to race from that spot.</p>
+          <p class="terr-intro">Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. Hover to compare; click to race from that spot.</p>
           <div class="legend" id="terr-legend">
             <div class="ramp">
               <div class="ramp-bar" id="ramp-bar"></div>
@@ -127,7 +127,19 @@
     <section class="note" id="climbers">
       <h2>The climbers</h2>
       <p>Each one sees the same thing at every step: the slope of the ground where it stands, as a two-number gradient g. They differ only in what they do with it. η is the learning rate you can set in the panel.</p>
+      <p>The default learning rates are sensible picks, not tuned to make any optimizer win. Where each one ends up depends on η, so try the sliders before drawing conclusions.</p>
       <div class="climbers" id="climber-cards"></div>
+    </section>
+
+    <section class="note" id="speed">
+      <h2>Why Momentum goes furthest</h2>
+      <div class="prose">
+        <p>To reach a higher summit, a climber usually has to go back down through a valley first. In loss terms, it has to climb out of a local minimum. SGD has no memory, so it stops at the first top it finds. Momentum keeps a running velocity and its steps grow with the slope, so speed picked up on the way up one hill can carry it over the top, across the next valley and up the far side.</p>
+        <p>Adam, Lion and Muon have a speed limit. They normalize their steps, so a step is about η long however steep the ground is. From Chinatown, with the learning rates that work best for each, Momentum's longest step is 275 m while Adam, Lion and Muon never pass 45 m. Most of Adam's steps are only a few meters, because it divides by a long memory of how steep the ground has been.</p>
+        <p>Lion and Muon still get partway by taking steps long enough to hop over small hills. With the best settings from a sweep of the sliders (a big η, noise and cosine decay), the share of starts that end on one of the four highest summits is 50% for Momentum, 46% for Lion, 31% for Nesterov, 25% for Muon and 10 to 12% for SGD, Adam, RMSprop and Adagrad.</p>
+        <p>Even Momentum is partly lucky. Those settings were chosen by checking how often they reach the top of this particular map, and they work because Mount Davidson sits in the city's biggest block of high ground. Large, noisy steps find broad high ground, not the single highest point: even among runs that reach the four highest summits, only about a third end on Mount Davidson itself. Add a narrow 1,000 ft peak in Bayview and the same settings reach it from fewer than 1 start in 200, less often than the defaults do. Make that peak a couple of kilometers wide and they find it far more often. It is the familiar idea that big, noisy steps favor wide minima over sharp ones.</p>
+        <p>In real training the speed limit is the point. A normalized step can't blow up, and one learning rate works for parameters whose gradients differ by orders of magnitude. Finding the global minimum isn't the goal there anyway, for the reasons under "What a map can't show" below.</p>
+      </div>
     </section>
 
     <section class="note" id="north">
@@ -180,9 +192,9 @@
       <h2>What a map can't show</h2>
       <div class="prose">
         <p>A map has two dimensions. A language model has billions, and two things change at that scale.</p>
-        <p><strong>True local optima get rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" story on this page is real in two dimensions and much weaker in a big network.</p>
-        <p><strong>The optima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, a bit like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
-        <p>So read the territory maps as intuition for how each update rule moves, not as a prediction of where a real model ends up.</p>
+        <p><strong>True local minima get rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" story on this page is real in two dimensions and much weaker in a big network.</p>
+        <p><strong>The minima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, a bit like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
+        <p>So read the basin maps as intuition for how each update rule moves, not as a prediction of where a real model ends up.</p>
       </div>
     </section>
 

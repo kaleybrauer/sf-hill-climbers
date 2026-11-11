@@ -89,14 +89,6 @@ button, select, input { font: inherit; color: inherit; }
 
 /* ---------- Masthead ---------- */
 .masthead { display: grid; gap: 10px; max-width: 64ch; }
-.eyebrow {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--step--1);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--brown);
-}
 .masthead h1 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -104,6 +96,12 @@ button, select, input { font: inherit; color: inherit; }
   line-height: 0.95;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+}
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  color: var(--ink-2);
+  margin-top: -4px;
 }
 .lede { font-size: var(--step-1); color: var(--ink-2); line-height: 1.5; }
 .lede strong { color: var(--ink); font-weight: 600; }
@@ -124,7 +122,8 @@ button, select, input { font: inherit; color: inherit; }
   padding: 10px 14px;
   border-bottom: 1px solid var(--rule);
 }
-.tabs { display: flex; gap: 4px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+@media (max-width: 460px) { .tab-more { display: none; } }
 .tab {
   border: 1px solid transparent;
   background: none;
@@ -378,6 +377,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
 .try {
   text-align: left;
   display: grid;
+  align-content: start;
   gap: 4px;
   padding: 12px 14px;
   border: 1px solid var(--rule);

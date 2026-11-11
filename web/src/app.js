@@ -1,4 +1,4 @@
-// SF Hill Climbers: map rendering, the race, territory maps, controls and the
+// SF Hill Climbers: map rendering, the race, basin maps, controls and the
 // matrix toy. The optimizers themselves live in core.js (window.SFCore).
 (function () {
   "use strict";
@@ -26,6 +26,7 @@
     "Hayes Valley": [37.7765, -122.4242],
     "Ocean Beach at Judah": [37.7605, -122.5080],
     "Haight & Ashbury": [37.7699, -122.4469],
+    "Chinatown": [37.7955, -122.4064],
   };
 
   // ---------- State ----------
@@ -114,7 +115,7 @@
         const { s, wet } = shadeAt((px + 0.5) / S * T.cell, (py + 0.5) / S * T.cell);
         const o = 4 * (py * w + px);
         reliefPixel(ir.data, o, s, wet, pal);
-        // Shade-only overlay for the territory maps: dark or light, mostly transparent.
+        // Shade-only overlay for the basin maps: dark or light, mostly transparent.
         is.data[o] = is.data[o + 1] = is.data[o + 2] = s < 0 ? 0 : 255;
         is.data[o + 3] = (s < 0 ? Math.min(0.5, -s * 0.55) : Math.min(0.35, s * 0.7)) * 255 * (1 - wet);
         iw.data[o] = pal.Wa[0]; iw.data[o + 1] = pal.Wa[1]; iw.data[o + 2] = pal.Wa[2]; iw.data[o + 3] = wet * 255;
@@ -711,7 +712,7 @@
   }
   $("search").addEventListener("submit", (ev) => { ev.preventDefault(); doSearch(); });
 
-  // ---------- Territory maps ----------
+  // ---------- Basins of attraction ----------
   const TERR_SPACING = [180, 90];
   const terr = { sig: null, level: -1, codes: null, gw: 0, gh: 0, spacing: 0, job: 0, progress: 0, running: false };
   const terrCards = [];
@@ -791,7 +792,7 @@
   function setStatus() {
     const st = $("status");
     if (terr.running) {
-      st.innerHTML = `Mapping territories <span class="num">${Math.round(terr.progress * 100)}%</span><span class="bar"><i style="width:${terr.progress * 100}%"></i></span>`;
+      st.innerHTML = `Mapping basins <span class="num">${Math.round(terr.progress * 100)}%</span><span class="bar"><i style="width:${terr.progress * 100}%"></i></span>`;
     } else if (activeTab === "territories" && terr.codes) {
       st.textContent = `Each map runs ${nf(terr.landCount)} starting points, ${terr.spacing} m apart`;
     } else {
@@ -824,14 +825,14 @@
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = col.water; ctx.fillRect(0, 0, w, h);
     ctx.drawImage(landMask, 0, 0, w, h);
-    // Territory cells cover whole spacing blocks; their right/bottom edge may overhang the grid.
+    // Basin cells cover whole spacing blocks; their right/bottom edge may overhang the grid.
     const bw = terr.gw * terr.spacing / T.widthM * w, bh = terr.gh * terr.spacing / T.heightM * h;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(off, 0, 0, bw, bh);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(shade, 0, 0, w, h);
     if (codes) {
-      // Borders between territories: a thin gap in the sheet colour.
+      // Borders between basins: a thin gap in the sheet colour.
       ctx.strokeStyle = col.sheet; ctx.globalAlpha = 0.85; ctx.lineWidth = Math.max(1, 0.8 * dpr);
       ctx.beginPath();
       const cw = bw / terr.gw, ch = bh / terr.gh, { gw, gh } = terr;
@@ -863,11 +864,11 @@
         if (v >= 0) tops.add(v); else if (v === C.STALLED) stalled++; else if (v === C.BUMP) flat++; else left++;
       }
       const pct = (n) => `${Math.round((100 * n) / land)}%`;
-      const parts = [`${tops.size} tops`];
+      const parts = [`${tops.size} basins`];
       if (stalled / land >= 0.005) parts.push(`out of steps on ${pct(stalled)}`);
       if (flat / land >= 0.005) parts.push(`flat spots ${pct(flat)}`);
       tc.card.querySelector(".stat").textContent = parts.join(" · ");
-      tc.over.setAttribute("aria-label", `${C.OPTIMIZERS[state.lanes[i].opt].label} territory map: ${parts.join(", ")}`);
+      tc.over.setAttribute("aria-label", `${C.OPTIMIZERS[state.lanes[i].opt].label} basins of attraction: ${parts.join(", ")}`);
       sizeCanvas(tc.over);
     });
     renderDisagreement();
@@ -1042,13 +1043,13 @@
   // ---------- Things to try ----------
   const TRIES = [
     { title: "16th St BART", text: "Momentum and Muon reach Buena Vista Park. SGD and Adam stop one hill short, on Corona Heights.", place: "16th St BART" },
-    { title: "Glen Park BART", text: "Only Momentum builds enough speed to roll past a 400 ft rise and reach Mount Davidson, the top of the city.", place: "Glen Park BART" },
+    { title: "Glen Park BART", text: "Only Momentum carries enough speed through a shallow local minimum (a 400 ft rise) to reach Mount Davidson, the global minimum.", place: "Glen Park BART" },
     { title: "Hayes Valley", text: "Three climbers go to Alamo Square. Adam's diagonal steps carry it to Lafayette Park instead.", place: "Hayes Valley" },
     { title: "Rotate the axes 30°", text: "Same start in Hayes Valley. Adam now picks Alamo Square, and SGD, Momentum and Muon trace exactly the same paths as before.", place: "Hayes Valley", set: { rotationDeg: 30 } },
     { title: "Ocean Beach at Judah", text: "The Sunset is a long, gentle ramp. SGD's steps shrink with the slope, so it needs more than twice as many steps as Adam to reach the top.", place: "Ocean Beach at Judah" },
     { title: "Swap Adam for Lion", text: "Lion only moves diagonally, a fixed distance per axis. From Ocean Beach it walks across the whole Sunset to Forest Hill.", place: "Ocean Beach at Judah", lanes: { 2: "lion" } },
-    { title: "Add gradient noise", text: "Noisy slope readings (σ = 0.03) shake SGD and Adam past Corona Heights and up to Buena Vista Park. Muon now stops at Corona Heights.", place: "16th St BART", set: { noise: 0.03 } },
     { title: "Decay the learning rate", text: "With a cosine schedule, Muon's fixed-length steps shrink to zero, so it finally settles on its summit instead of circling it.", place: "Haight & Ashbury", set: { cosine: true } },
+    { title: "Aim for the high ground", text: "Give Momentum a huge step (η\u00a0256), β\u00a00.95, gradient noise and cosine decay, and it crosses from Chinatown to Mount Davidson. Across the city, it now reaches one of the four highest summits from half of all starts, up from 6%. Without the noise it's 13%; without the decay it never settles.", place: "Chinatown", set: { beta: 0.95, noise: 0.08, cosine: true, steps: 3000 }, lr: { 1: 256 } },
   ];
   $("tries").innerHTML = TRIES.map((t, i) => `<button class="try" type="button" data-try="${i}"><b>${t.title}</b><span>${t.text}</span></button>`).join("");
   $("tries").addEventListener("click", (ev) => {
@@ -1058,6 +1059,7 @@
     state = defaults();
     Object.assign(state, t.set || {});
     for (const [i, opt] of Object.entries(t.lanes || {})) state.lanes[i] = { opt, lr: C.OPTIMIZERS[opt].lr[0] };
+    for (const [i, lr] of Object.entries(t.lr || {})) state.lanes[i].lr = lr;
     start = placeStart(t.place);
     $("race-hint").hidden = true;
     buildLanes(); syncShared(); updateTerrHeaders();
@@ -1069,7 +1071,7 @@
   // ---------- Climber cards ----------
   const ABOUT = {
     sgd: ["Plain gradient descent", "Steps in proportion to the slope. Steep ground means big strides and flat ground means tiny ones, so it crawls across the Sunset and the Mission."],
-    momentum: ["Heavy ball", "Keeps a running velocity. It speeds up on long slopes, rolls past small rises, overshoots summits and swings back."],
+    momentum: ["Heavy ball", "Keeps a running velocity. It speeds up on long slopes, carries through shallow local minima instead of stopping in them, and overshoots before settling."],
     nesterov: ["Look-ahead momentum", "Momentum that adds the current slope on top of the updated velocity, which damps some of the overshoot."],
     adam: ["Per-axis normalized", "Divides each axis's step by that axis's recent slope size, so it moves about η per axis per step on steep and flat ground alike. That per-axis treatment is also why it favors diagonals."],
     rmsprop: ["Adam without momentum", "Per-axis normalized steps from the current slope. Quick on flat ground, twitchy near summits."],
