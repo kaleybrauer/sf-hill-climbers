@@ -1,8 +1,9 @@
 """Inline the stylesheet, terrain data and scripts into one self-contained page.
 
-Run:  python3 build.py   ->  dist/sf-hill-climbers.html
+Run:  python3 build.py   ->  docs/ (the GitHub Pages site) and dist/sf-hill-climbers.html
 """
 import pathlib
+import shutil
 
 ROOT = pathlib.Path(__file__).resolve().parent
 WEB = ROOT / "web"
@@ -46,6 +47,7 @@ def main():
     standalone = ROOT / "docs" / "index.html"
     standalone.parent.mkdir(exist_ok=True)
     standalone.write_text(site)
+    shutil.copyfile(WEB / "preview.png", standalone.parent / "preview.png")  # link-preview image
     print(f"wrote {standalone.relative_to(ROOT)} ({standalone.stat().st_size / 1e6:.2f} MB)")
 
 
