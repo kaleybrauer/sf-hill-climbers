@@ -567,7 +567,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
       <div class="prose">
         <p>SGD, Momentum and Muon only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.</p>
         <p>Adam, RMSprop, Adagrad and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along <em>each</em> axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.</p>
-        <p>This matters in real training too. Adam's per-coordinate trick works best when the important directions in a problem line up with individual parameters. The demo below shows what happens when they don't.</p>
+        <p>This matters in real training too. Adam's per-coordinate trick works best when the important directions in a problem line up with individual parameters. The fact-memorizing demo in the next section shows what happens when they don't: with the facts pointing in random directions, Adam's error on rare facts is about five times higher at step 25.</p>
       </div>
     </section>
 
@@ -575,7 +575,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
       <h2>Muon was not built for a 2D map</h2>
       <div class="prose">
         <p>Muon was built for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.</p>
-        <p>On this map the position is just two numbers: a 1×2 matrix with one singular value. The whole procedure collapses to "follow the momentum and always step the same distance." That is the green climber. It never quite settles on a summit, because its step never shrinks unless you turn on the learning-rate decay.</p>
+        <p>On this map the position is just two numbers: a 1×2 matrix with one singular value. The whole procedure collapses to "follow the momentum and always step the same distance." On the map, Muon never quite settles on a summit, because its step never shrinks unless you turn on the learning-rate decay.</p>
         <p>To see what Muon is actually for, here is a small version of a job it does in a language model: storing facts. A 64×64 matrix has to map 64 keys to 64 values. Facts appear with very different frequencies, like words in text. The most common fact gets 42% of the weight, the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.</p>
       </div>
       <div class="memory">
