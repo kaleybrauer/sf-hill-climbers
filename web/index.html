@@ -1,0 +1,205 @@
+<title>SF Hill Climbers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Gradient descent, Momentum, Adam and Muon race uphill across San Francisco's real terrain.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/*{{CSS}}*/
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <div class="eyebrow">San Francisco · loss = −elevation</div>
+    <h1>SF Hill Climbers</h1>
+    <p class="lede">Pick a starting point anywhere in the city. Four optimizers try to climb as high as they can, and each one only feels the slope under its feet. <strong>Mount Davidson (928 ft) is the global optimum.</strong> Most starting points never reach it.</p>
+  </header>
+
+  <section class="tool" id="tool" aria-label="Optimizer map">
+    <div class="tool-head">
+      <div class="tabs" role="tablist" aria-label="View">
+        <button class="tab" role="tab" id="tab-race" aria-selected="true" aria-controls="view-race">Race from one spot</button>
+        <button class="tab" role="tab" id="tab-territories" aria-selected="false" aria-controls="view-territories">Territory maps</button>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+    <div class="tool-body">
+      <div class="views">
+        <div class="view" id="view-race" role="tabpanel" aria-labelledby="tab-race">
+          <form class="search" id="search" role="search" autocomplete="off">
+            <label class="search-label" for="addr">Start from an address</label>
+            <div class="search-row">
+              <input id="addr" type="search" enterkeyhint="go" spellcheck="false" placeholder="3500 20th St, Valencia & 24th, Dolores Park…">
+              <button class="btn btn-go" type="submit">Climb from here</button>
+            </div>
+            <div class="search-msg" id="search-msg" aria-live="polite"></div>
+          </form>
+          <div class="map-wrap clickable" id="race-wrap">
+            <canvas id="race-base" aria-hidden="true"></canvas>
+            <canvas id="race-paths" role="img" aria-label="Map of San Francisco with optimizer paths"></canvas>
+            <div class="map-tip" id="race-tip" hidden></div>
+            <div class="map-hint" id="race-hint">Click or tap anywhere on land to start there</div>
+            <button class="map-btn" id="zoom-btn" type="button" hidden>Show whole city</button>
+          </div>
+          <div class="collar">
+            <div class="scalebar" id="scalebar"></div>
+            <div><span id="contour-note">Contour interval 50 feet</span> · 20 m grid · North up</div>
+          </div>
+          <section class="results" aria-label="Where they ended up">
+            <div class="results-head"><h2 class="label">Where they ended up</h2><div class="from" id="from"></div></div>
+            <ol class="scores" id="scores"></ol>
+          </section>
+        </div>
+
+        <div class="view" id="view-territories" role="tabpanel" aria-labelledby="tab-territories" hidden>
+          <p class="terr-intro">Every patch of color is a territory: all the starting points from which that optimizer ends on the same top. Darker violet means a higher summit, which is a better optimum. Hover to compare; click to race from that spot.</p>
+          <div class="legend" id="terr-legend">
+            <div class="ramp">
+              <div class="ramp-bar" id="ramp-bar"></div>
+              <div class="ramp-ticks" id="ramp-ticks"></div>
+            </div>
+            <span class="sw"><i style="background: var(--cat-flat)"></i>Flat spot</span>
+            <span class="sw"><i style="background: var(--cat-stalled)"></i>Ran out of steps</span>
+            <span class="sw"><i style="background: var(--cat-left)"></i>Left the city</span>
+          </div>
+          <div class="terr-grid" id="terr-grid"></div>
+          <div class="disagree">
+            <div class="disagree-layout">
+              <div class="terr-card">
+                <header><h3>Where they disagree</h3></header>
+                <div class="map-wrap clickable" id="dis-wrap">
+                  <canvas id="dis-base" aria-hidden="true"></canvas>
+                  <canvas id="dis-over" role="img" aria-label="Map of where the optimizers end on different tops"></canvas>
+                  <div class="map-tip" id="dis-tip" hidden></div>
+                </div>
+                <div class="legend">
+                  <span class="sw"><i style="background: var(--land)"></i>All agree</span>
+                  <span class="sw"><i style="background: var(--dis-1)"></i>2 different endings</span>
+                  <span class="sw"><i style="background: var(--dis-2)"></i>3</span>
+                  <span class="sw"><i style="background: var(--dis-3)"></i>All 4 different</span>
+                </div>
+              </div>
+              <div class="prose" id="dis-text"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel" aria-label="Results and settings">
+        <section>
+          <h2>Climbers</h2>
+          <div class="lanes" id="lanes"></div>
+        </section>
+        <section>
+          <h2>Shared settings</h2>
+          <div class="field">
+            <label for="set-beta">Momentum β <output id="out-beta"></output></label>
+            <input type="range" id="set-beta" min="0" max="0.99" step="0.01">
+            <span class="hint">Used by Momentum, Nesterov, Adam (β₁), Lion and Muon</span>
+          </div>
+          <div class="field">
+            <label for="set-steps">Steps <output id="out-steps"></output></label>
+            <input type="range" id="set-steps" min="100" max="3000" step="100">
+          </div>
+          <div class="field">
+            <label for="set-noise">Gradient noise σ <output id="out-noise"></output></label>
+            <input type="range" id="set-noise" min="0" max="0.08" step="0.005">
+            <span class="hint">Random error added to every slope reading, like a mini-batch</span>
+          </div>
+          <div class="field">
+            <label for="set-rot">Rotate the axes <output id="out-rot"></output></label>
+            <input type="range" id="set-rot" min="0" max="45" step="1">
+            <span class="hint">The optimizers measure slope along turned axes. Only per-axis methods notice.</span>
+          </div>
+          <label class="check"><input type="checkbox" id="set-cosine"> Decay the learning rate (cosine schedule)</label>
+          <button class="btn" id="reset" type="button">Reset to defaults</button>
+        </section>
+      </aside>
+    </div>
+  </section>
+
+  <div class="notes">
+    <section class="note" id="try">
+      <h2>Things to try</h2>
+      <div class="tries" id="tries"></div>
+    </section>
+
+    <section class="note" id="climbers">
+      <h2>The climbers</h2>
+      <p>Each one sees the same thing at every step: the slope of the ground where it stands, as a two-number gradient g. They differ only in what they do with it. η is the learning rate you can set in the panel.</p>
+      <div class="climbers" id="climber-cards"></div>
+    </section>
+
+    <section class="note" id="north">
+      <h2>Why Adam cares which way is north</h2>
+      <div class="prose">
+        <p>SGD, Momentum and Muon only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.</p>
+        <p>Adam, RMSprop, Adagrad and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along <em>each</em> axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.</p>
+        <p>This matters in real training too. Adam's per-coordinate trick works best when the important directions in a problem line up with individual parameters. The demo below shows what happens when they don't.</p>
+      </div>
+    </section>
+
+    <section class="note" id="muon">
+      <h2>Muon, reduced to two numbers</h2>
+      <div class="prose">
+        <p>Muon was built for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.</p>
+        <p>On this map the position is just two numbers: a 1×2 matrix with one singular value. The whole procedure collapses to "follow the momentum and always step the same distance." That is the green climber. It never quite settles on a summit, because its step never shrinks unless you turn on the learning-rate decay.</p>
+        <p>To see what Muon is actually for, here is a small version of a job it does in a language model: storing facts. A 64×64 matrix has to map 64 keys to 64 values. Facts appear with very different frequencies, like words in text. The most common fact gets 42% of the weight, the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.</p>
+      </div>
+      <div class="memory">
+        <div class="memory-controls">
+          <div class="seg" role="group" aria-label="How the facts are oriented">
+            <button type="button" id="mem-rot" aria-pressed="true">Facts in random directions</button>
+            <button type="button" id="mem-aln" aria-pressed="false">Facts lined up with the axes</button>
+          </div>
+          <div class="series-legend" id="mem-legend"></div>
+        </div>
+        <div class="charts">
+          <div class="chart" id="chart-curve">
+            <h3>Error on the 32 rarest facts</h3>
+            <div class="sub">Average distance from the right answer, by training step</div>
+            <svg id="svg-curve" role="img" aria-label="Line chart of rare-fact error by training step"></svg>
+            <div class="map-tip" id="tip-curve" hidden></div>
+          </div>
+          <div class="chart" id="chart-facts">
+            <h3>Error on every fact at step <span class="num" id="mem-step-label">25</span></h3>
+            <div class="sub">Facts ordered from most common (left) to rarest (right)</div>
+            <svg id="svg-facts" role="img" aria-label="Line chart of error for each fact"></svg>
+            <div class="map-tip" id="tip-facts" hidden></div>
+            <div class="field">
+              <label for="mem-step">Training step <output id="out-mem-step">25</output></label>
+              <input type="range" id="mem-step" min="0" max="100" step="1" value="25">
+            </div>
+          </div>
+        </div>
+        <div class="mem-findings" id="mem-findings" aria-live="polite">Training the three optimizers…</div>
+      </div>
+    </section>
+
+    <section class="note" id="caveat">
+      <h2>What a map can't show</h2>
+      <div class="prose">
+        <p>A map has two dimensions. A language model has billions, and two things change at that scale.</p>
+        <p><strong>True local optima get rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" story on this page is real in two dimensions and much weaker in a big network.</p>
+        <p><strong>The optima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, a bit like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
+        <p>So read the territory maps as intuition for how each update rule moves, not as a prediction of where a real model ends up.</p>
+      </div>
+    </section>
+
+    <footer class="colophon">
+      <p>Elevation from AWS Terrain Tiles, which use bare-earth USGS 3DEP lidar for San Francisco, so buildings are removed. It is resampled to a 20 m grid and smoothed over about 35 m so street cuts and retaining walls don't count as hills. The optimizers climb that smoothed surface, whose tops sit roughly 10 to 40 feet below the summit heights shown.</p>
+      <p>Summit names, streets, places and addresses © OpenStreetMap contributors. Address search runs entirely in your browser: what you type is never sent anywhere. A climber has arrived when it is within 2.5 m (8 ft) of the top it would reach by walking straight uphill from where it stopped. A flat spot is a top with under 30 cm of prominence. Runs are deterministic; noise uses a fixed seed for each starting point.</p>
+    </footer>
+  </div>
+</div>
+
+<script type="application/json" id="terrain-data">{{TERRAIN}}</script>
+<script id="core-src">
+/*{{CORE}}*/
+</script>
+<script>
+/*{{GEOCODE}}*/
+</script>
+<script>
+/*{{APP}}*/
+</script>
