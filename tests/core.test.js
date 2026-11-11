@@ -124,11 +124,17 @@ console.log(failures ? `${failures} failed` : "all passed");
 {
   const { d, zipf, steps } = core.MEMORY;
   const rare = (e) => e.slice(d / 2).reduce((a, b) => a + b, 0) / (d / 2);
-  const run = (key, rotated) => rare(core.trainMemory(core.makeMemoryTask(d, rotated, zipf, 7), key, steps, core.MATRIX_OPTS[key].lr).errs[steps]);
-  const r = {};
-  for (const k of ["sgd", "adam", "muon"]) r[k] = [run(k, false), run(k, true)];
+  const errs = (key, rotated) => core.trainMemory(core.makeMemoryTask(d, rotated, zipf, 7), key, steps, core.MATRIX_OPTS[key].lr).errs;
+  const runs = {};
+  for (const k of ["sgd", "adam", "muon"]) runs[k] = [errs(k, false), errs(k, true)];
+  const at = (step) => Object.fromEntries(Object.entries(runs).map(([k, [a, b]]) => [k, [rare(a[step]), rare(b[step])]]));
+  const r = at(steps);
+  // Checked at step 25 (the page's default view). By step 100 Muon's fixed-size
+  // steps bounce around the solution, so last-bit rounding differences between
+  // JS engines grow into visible ones even though the update is rotation-invariant.
   check("memory toy: SGD and Muon are unchanged by rotating the keys", () => {
-    assert.ok(Math.abs(r.sgd[0] - r.sgd[1]) < 1e-6 && Math.abs(r.muon[0] - r.muon[1]) < 1e-3, JSON.stringify(r));
+    const e = at(25);
+    assert.ok(Math.abs(e.sgd[0] - e.sgd[1]) < 1e-6 && Math.abs(e.muon[0] - e.muon[1]) < 1e-6, JSON.stringify(e));
   });
   check("memory toy: Adam is much worse on rare facts when keys are rotated", () => {
     assert.ok(r.adam[1] > 5 * r.adam[0], JSON.stringify(r.adam));
