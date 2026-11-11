@@ -96,7 +96,7 @@ Moves exactly η along each axis every step, in the direction of a blend of mome
 Tries a random nearby point each step: always takes it if higher, sometimes if lower, less often as it cools. With billions of weights a random move almost never helps, which is why networks use gradients.
 
 ## section north: Why Adam cares which way is north
-SGD, Momentum and Muon only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.
+SGD, Momentum, Muon and Nesterov only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.
 
 Adam, RMSprop and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along *each* axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.
 

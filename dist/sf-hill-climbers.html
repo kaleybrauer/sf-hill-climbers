@@ -563,7 +563,7 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     <section class="note" id="north">
       <h2>Why Adam cares which way is north</h2>
       <div class="prose">
-        <p>SGD, Momentum and Muon only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.</p>
+        <p>SGD, Momentum, Muon and Nesterov only use the gradient as a whole arrow. Turn the map and the arrow turns with it, so their paths turn too and end on the same hill.</p>
 <p>Adam, RMSprop and Lion treat east-west and north-south as separate numbers. Adam divides each one by its own recent size, so early on it moves about η along <em>each</em> axis. That makes diagonal steps √2 times longer than straight ones. Rotate the axes and the "diagonals" point somewhere else, so Adam takes a different route. From Hayes Valley, rotating 30° sends Adam to Alamo Square instead of Lafayette Park, and none of the other three move at all.</p>
 <p>This matters in real training too. Adam's per-coordinate trick works best when the important directions in a problem line up with individual parameters. The fact-memorizing demo in the next section shows what happens when they don't: with the facts pointing in random directions, Adam's error on rare facts is about five times higher at step 25.</p>
       </div>
