@@ -81,7 +81,7 @@ Keeps a running velocity. It speeds up on long slopes, carries through shallow l
 Divides each axis's step by that axis's recent slope size, so it moves about η per axis per step on steep and flat ground alike. That per-axis treatment is also why it favors diagonals.
 
 ## climber muon: Orthogonalized momentum
-Normalizes the momentum, then runs a few Newton–Schulz iterations, a cheap way to push every singular value of a matrix toward 1. A 1×2 matrix has only one, so this leaves a fixed step of about 0.7 η along the momentum.
+Normalizes the momentum, then runs a few Newton-Schulz iterations, a cheap way to push every singular value of a matrix toward 1. A 1×2 matrix has only one, so this leaves a fixed step of about 0.7 η along the momentum.
 
 ## climber nesterov: Look-ahead momentum
 Momentum that adds the current slope on top of the updated velocity, which damps some of the overshoot.
@@ -98,16 +98,16 @@ Tries a random nearby point each step: always takes it if higher, sometimes if l
 ## section north: Adam is sensitive to which way is North
 SGD, Momentum, Muon and Nesterov only care about the gradient's direction and length. But Adam, RMSprop and Lion treat east-west and north-south as separate numbers.
 
-Adam rescales the east-west and north-south slopes separately, so early on it moves roughly η along *each* axis. That makes diagonal steps √2 times longer than straight ones. If you rotate the axes, the diagonal rotates and Adam takes a different route. From Hayes Valley, rotating 30° leads Adam to Alamo Square instead of Lafayette Park.
+Adam rescales the east-west and north-south slopes separately, so early on it moves roughly η along *each* axis. That makes diagonal steps √2 times longer than straight ones. If you rotate the axes, the diagonal rotates, so Adam takes a different route. From Hayes Valley, rotating 30° leads Adam to Alamo Square instead of Lafayette Park.
 
-This matters in real training. Adam's per-coordinate scaling works best when the important directions in a problem line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
+This matters in actual LLM training. Adam's per-coordinate scaling works best when the important directions in a problem line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
 
 ## section muon: Muon was not built for a 2D map
-Muon was built for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.
+Muon was made for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.
 
 On this map, though, the position is just two numbers, a 1×2 matrix with one singular value. So the whole procedure collapses to "follow the momentum and always step the same distance." On the map, Muon never fully comes to rest on a summit because its step never shrinks unless you turn on the learning-rate decay.
 
-To see what Muon is actually for, here is a small demo of a single weight matrix storing facts. A 64×64 matrix has to map 64 keys to 64 values. The facts appear with very different frequencies. The most common fact gets 42% of the weight, the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.
+To see what Muon is actually for, here is a small demo of a single weight matrix storing facts. A 64×64 matrix has to map 64 keys to 64 values. The facts appear with very different frequencies — the most common fact gets 42% of the weight and the rarest fact gets 0.08%. Each optimizer starts from zero and uses its own best learning rate.
 
 [Wang et al. (ICLR 2026)](https://arxiv.org/abs/2509.26030) study this kind of memory and see the same pattern in a real language model, where Muon learns rare facts much better than Adam.
 
