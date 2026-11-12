@@ -25,7 +25,7 @@ Each patch of color is a basin of attraction: all the starting points from which
 ## template disagreement
 All four agree on {agree} of the city.
 
-On the other {other}, at least one climber ends somewhere else: two different endings on {two}, three on {three}, and all four different on {four}.
+On the other {other}, at least one climber ends somewhere else. There are two different endings on {two}, three on {three}, and all four different on {four}.
 
 The most different pair is **{pair_a}** and **{pair_b}**, which disagree on {pair_pct} of starting points. The most alike are {alike_a} and {alike_b}, at {alike_pct}.
 
@@ -43,10 +43,10 @@ The optimizers measure slope along turned axes. Only per-axis methods notice.
 ## section try: Things to try
 
 ## card judah: 9th & Judah
-The optimizers end on three different hills: Forest Hill, Larsen Peak and Mount Sutro. Now drag β. At 0.5 they all stop on the same shoulder, and near 0.99 they spread across four different summits.
+The optimizers end on three different hills, Forest Hill, Larsen Peak and Mount Sutro. Now drag β. At 0.5 they all stop on the same shoulder, and near 0.99 they spread across four different summits.
 
 ## card glen: Glen Park BART
-Only Momentum carries enough speed through a shallow local minimum (a 400 ft rise) to reach Mount Davidson, the global minimum of the loss.
+Only Momentum carries enough speed over a 400 ft rise, a shallow local minimum, to reach Mount Davidson, the global minimum of the loss.
 
 ## card hayes: Hayes Valley
 Three optimizers go to Alamo Square. Adam's diagonal steps carry it to Lafayette Park instead.
@@ -93,7 +93,7 @@ Per-axis normalized steps from the current slope. Quick on flat ground, twitchy 
 Moves exactly η along each axis every step, in the direction of a blend of momentum and slope. Every move is diagonal.
 
 ## climber anneal: No gradient at all
-Tries a random nearby point each step: always takes it if higher, sometimes if lower, less often as it cools. With billions of weights a random move almost never helps, which is why networks use gradients.
+Tries a random nearby point each step. It always takes it if higher and sometimes if lower, less often as it cools. With billions of weights a random move almost never helps, which is why networks use gradients.
 
 ## section north: Adam is sensitive to which way is North
 SGD, Momentum, Muon and Nesterov only care about the gradient's direction and length. But Adam, RMSprop and Lion treat east-west and north-south as separate numbers.
@@ -103,7 +103,7 @@ Adam rescales the east-west and north-south slopes separately, so early on it mo
 This matters in actual LLM training. Adam's per-coordinate scaling works best when the important directions in a problem line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
 
 ## section muon: Muon was not built for a 2D map
-Muon was made for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with the nearest orthogonal matrix using a few Newton-Schulz iterations. That sets every singular value to about 1, so every direction in the update gets the same size.
+Muon was made for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with roughly the nearest orthogonal matrix using a few Newton-Schulz iterations. That brings every singular value close to 1, so every direction in the update gets the same size.
 
 On this map, though, the position is just two numbers, a 1×2 matrix with one singular value. So the whole procedure collapses to "follow the momentum and always step the same distance." On the map, Muon never fully comes to rest on a summit because its step never shrinks unless you turn on the learning-rate decay.
 
@@ -114,7 +114,7 @@ To see what Muon is actually for, here is a small demo of a single weight matrix
 ## template matrix random
 At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, Muon {muon}.
 
-SGD's learning rate is capped by the most common fact, so rare facts barely move. Muon gives every direction of the update the same size, so rare facts learn about as fast as common ones. Adam's per-number normalization only helps when the facts line up with the axes: there, its rare-fact error at this step is {adam_other}. SGD and Muon give identical results either way.
+SGD's learning rate is capped by the most common fact, so rare facts barely move. Muon gives every direction of the update the same size, so rare facts learn about as fast as common ones. Adam's per-number normalization only helps when the facts line up with the axes, where its rare-fact error at this step is {adam_other}. SGD and Muon give identical results either way.
 
 ## template matrix aligned
 At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, Muon {muon}.
@@ -122,14 +122,14 @@ At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, M
 SGD's learning rate is capped by the most common fact, so rare facts barely move. Muon gives every direction of the update the same size, so rare facts learn about as fast as common ones. Adam's per-number normalization works well here because each fact sits on its own axis. With the facts in random directions its rare-fact error at this step is {adam_other}. SGD and Muon give identical results either way.
 
 ## section caveat: What a map can't show
-A map only has two dimensions while language models can have billions. So this map doesn't capture the actual way these optimizers work in LLMs. In particular, in much higher dimensions:
+A map only has two dimensions while language models can have billions. So some of what happens on this map doesn't carry over to LLMs. In particular, in much higher dimensions:
 
 **True local minima become rare.** At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" problem on this map is not as common in real training.
 
-**The minima found tend to be about equally good.** Different training runs of a large network usually reach very similar loss, like how Twin Peaks and Mount Sutro are only a few feet lower than Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.
+**The minima found tend to be about equally good.** Different training runs of a large network usually reach very similar loss, like how Twin Peaks and Mount Sutro are within 16 feet of Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.
 
 
 ## footer
-Elevation from AWS Terrain Tiles, which use bare-earth USGS 3DEP lidar for San Francisco, so buildings are removed. It is resampled to a 20 m grid and smoothed over about 35 m so street cuts and retaining walls don't count as hills. The optimizers climb that smoothed surface, whose tops sit roughly 10 to 40 feet below the summit heights shown.
+Elevation from AWS Terrain Tiles, which use bare-earth USGS 3DEP lidar for San Francisco, so buildings are removed. It is resampled to a 20 m grid and smoothed over about 35 m so street cuts and retaining walls don't count as hills. The optimizers climb that smoothed surface, whose tops typically sit 10 to 40 feet below the summit heights shown, and up to about 70 on sharp peaks.
 
-Summit names, streets, places and addresses © OpenStreetMap contributors. Address search runs entirely in your browser: what you type is never sent anywhere. A climber has arrived when it is within 2.5 m (8 ft) of the top it would reach by walking straight uphill from where it stopped. A flat spot is a top with under 30 cm of prominence. Runs are deterministic and give the same result in every browser; noise uses a fixed seed for each starting point.
+Summit names, streets, places and addresses © OpenStreetMap contributors. Address search runs entirely in your browser, so what you type is never sent anywhere. A climber has arrived when it is within 2.5 m (8 ft) of the top it would reach by walking straight uphill from where it stopped. A flat spot is a top with under 30 cm of prominence. Runs are deterministic and give the same result in every browser; noise uses a fixed seed for each starting point.
