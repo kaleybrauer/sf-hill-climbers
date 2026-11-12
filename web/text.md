@@ -103,11 +103,11 @@ Adam rescales the east-west and north-south slopes separately, so early on it mo
 This matters in actual LLM training. Adam's per-coordinate scaling works best when the important directions in a problem line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
 
 ## section muon: Muon was not built for a 2D map
-Muon was made for the weight matrices inside neural networks. It takes the momentum matrix and replaces it with roughly the nearest orthogonal matrix using a few Newton-Schulz iterations. That brings every singular value close to 1, so every direction in the update gets the same size.
+Muon was made for LLM weight matrices, not a 2D map. It takes the momentum matrix and replaces it with roughly the nearest orthogonal matrix using a few Newton-Schulz iterations, bringing every singular value close to 1. This is so every direction gets roughly the same sized update.
 
-On this map, though, the position is just two numbers, a 1×2 matrix with one singular value. So the whole procedure collapses to "follow the momentum and always step the same distance." On the map, Muon never fully comes to rest on a summit because its step never shrinks unless you turn on the learning-rate decay.
+On a 2D map, though, the position is just a 1×2 matrix with one singular value. So the optimizer becomes just "follow the direction of the momentum and always step the same distance." On the map, Muon never fully comes to rest on a summit since its step never shrinks unless you turn on learning-rate decay.
 
-To see what Muon is actually for, here is a small demo of a single weight matrix storing facts. A 64×64 matrix has to map 64 keys to 64 values. The facts appear with very different frequencies — the most common fact gets 42% of the weight and the rarest fact gets 0.08%. Each optimizer starts from zero and uses its own best learning rate.
+To see what Muon is actually for, here is a small demo of a single weight matrix storing facts. I train a 64×64 matrix to map 64 keys to 64 values. The facts appear with very different frequencies — the most common fact appears 42% of the time and the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.
 
 [Wang et al. (ICLR 2026)](https://arxiv.org/abs/2509.26030) study this kind of memory and see the same pattern in a real language model, where Muon learns rare facts much better than Adam.
 
