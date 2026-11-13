@@ -122,11 +122,13 @@ At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, M
 SGD's learning rate is capped by the most common fact, so rare facts barely move. Muon gives every direction of the update the same size, so rare facts learn about as fast as common ones. Adam's per-number normalization works well here because each fact sits on its own axis. With the facts in random directions its rare-fact error at this step is {adam_other}. SGD and Muon give identical results either way.
 
 ## section caveat: What a map can't show
-A map only has two dimensions while language models can have billions. So some of what happens on this map doesn't carry over to LLMs. In particular, in much higher dimensions:
+A map has two dimensions while a language model can have billions, so some of what happens here doesn't carry over.
 
-**True local minima become rare.** At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" problem on this map is not as common in real training.
+**Getting stuck on the wrong hill is mostly a 2D problem.** At a local minimum the loss has to curve upward in every direction at once. With billions of directions, a point where the loss is still high almost always has some direction that leads down. Slow stretches in real training are usually saddle points and long flat valleys.
 
-**The minima found tend to be about equally good.** Different training runs of a large network usually reach very similar loss, like how Twin Peaks and Mount Sutro are within 16 feet of Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.
+**The minima that large networks find tend to be about equally good.** Different training runs usually reach very similar loss. On this map, most hilltops are far lower than Mount Davidson. The optimizer still matters, because it decides how fast training gets there and which of those solutions it ends in, and some of them work better on new data than others.
+
+What does carry over is how each optimizer moves. Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.
 
 
 ## footer

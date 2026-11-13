@@ -610,9 +610,10 @@ input[type="range"] { width: 100%; accent-color: var(--brown); margin: 4px 0; }
     <section class="note" id="caveat">
       <h2>What a map can't show</h2>
       <div class="prose">
-        <p>A map only has two dimensions while language models can have billions. So some of what happens on this map doesn't carry over to LLMs. In particular, in much higher dimensions:</p>
-<p><strong>True local minima become rare.</strong> At a real local minimum, the loss has to curve upward in every direction at once. With billions of directions that almost never happens. Training slows down mostly at saddle points and long, nearly flat valleys. The "stuck on the wrong hill" problem on this map is not as common in real training.</p>
-<p><strong>The minima found tend to be about equally good.</strong> Different training runs of a large network usually reach very similar loss, like how Twin Peaks and Mount Sutro are within 16 feet of Mount Davidson. What differs more is how fast they get there and how the solutions behave on new data.</p>
+        <p>A map has two dimensions while a language model can have billions, so some of what happens here doesn't carry over.</p>
+<p><strong>Getting stuck on the wrong hill is mostly a 2D problem.</strong> At a local minimum the loss has to curve upward in every direction at once. With billions of directions, a point where the loss is still high almost always has some direction that leads down. Slow stretches in real training are usually saddle points and long flat valleys.</p>
+<p><strong>The minima that large networks find tend to be about equally good.</strong> Different training runs usually reach very similar loss. On this map, most hilltops are far lower than Mount Davidson. The optimizer still matters, because it decides how fast training gets there and which of those solutions it ends in, and some of them work better on new data than others.</p>
+<p>What does carry over is how each optimizer moves. Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.</p>
       </div>
     </section>
 
