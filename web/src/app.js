@@ -700,6 +700,7 @@
     const p = raceXY(ev);
     if (C.heightAt(T, p.x, p.y) < 1) return;
     start = { x: p.x, y: p.y, label: null };
+    $("addr").value = "";
     $("race-hint").hidden = true;
     runRace("fly");
   });
@@ -722,6 +723,8 @@
   }
   function doSearch() {
     const q = $("addr").value;
+    // An empty box replays the race from the current start.
+    if (!q.trim()) { searchMessage("", null); showTab("race"); runRace("fly"); return; }
     const r = GEO.search(q);
     if (r.error) { searchMessage(r.error, r.suggestions || [], q, r.bad); return; }
     const p = r.lat != null ? toXY(r.lat, r.lon) : r;
@@ -970,6 +973,7 @@
     const p = eventXY(ev, wrap);
     if (C.heightAt(T, p.x, p.y) < 1) return;
     start = { x: p.x, y: p.y, label: null };
+    $("addr").value = "";
     $("race-hint").hidden = true;
     showTab("race");
     runRace("fly");
@@ -1091,6 +1095,7 @@
     for (const [i, opt] of Object.entries(t.lanes || {})) state.lanes[i] = { opt, lr: C.OPTIMIZERS[opt].lr[0] };
     for (const [i, lr] of Object.entries(t.lr || {})) state.lanes[i].lr = lr;
     start = placeStart(t.place);
+    $("addr").value = "";
     $("race-hint").hidden = true;
     buildLanes(); syncShared(); updateTerrHeaders();
     showTab("race");
