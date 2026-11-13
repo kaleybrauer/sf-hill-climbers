@@ -126,7 +126,7 @@ A map has only two dimensions while a language model can have billions, so this 
 
 **Getting stuck on a short hill is mostly a low-dimensional problem.** At a true local minimum the loss has to increase in every direction at once. When there are billions of dimensions and the loss is still high, that is very rare. This map, on the other hand, is full of tiny hills. In real training, runs with different random starts usually reach very similar loss. So the optimizer matters less for the exact loss it is able to reach and more for how quickly the loss falls and which exact solution it ends at.
 
-**Real networks have millions of directions at once.** A 2D map only has one slope at each point. Real networks have millions of directions, some steep and some flat, and Adam and Muon are designed to help handle that. The fact-learning demo shows a small case of this.
+**A 2D map has only one slope at each point.**  Real networks have billions of directions, some steep and some flat, and Adam and Muon are designed to help handle that. The fact-learning demo shows a small case of this since the map can't.
 
 A 2D map does show, though, how each optimizer moves. For example, Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.
 
