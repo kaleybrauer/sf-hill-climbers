@@ -20,7 +20,7 @@ loss = −elevation
 Pick a starting point anywhere in San Francisco! Four optimizers will climb as high as they can. The loss decreases with elevation, so every hilltop is a local minimum and Mount Davidson (928 ft) is the global minimum.
 
 ## basins intro
-Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. At its default learning rate, SGD's map is almost exactly the terrain's own basins, where walking straight uphill in tiny steps would take you, so it makes a good baseline for the others. Hover to compare and click to race from that spot.
+Each patch of color is a basin of attraction: all the starting points from which that optimizer ends on the same hilltop. Darker violet means a higher summit, so a lower loss. At its default learning rate, SGD's map is almost exactly the terrain's own basins (aka, where walking straight uphill in tiny steps would take you) so it makes a good baseline. Hover to compare and click to race from that spot.
 
 ## template disagreement
 All four agree on {agree} of the city.
@@ -67,9 +67,9 @@ It ignores the slope and sometimes steps downhill on purpose. From Haight & Ashb
 Momentum with a huge step (η 256), β 0.95, noise and cosine decay climbs from Dolores Park to the city's highest summits while the others stop on Dolores Heights. With these settings, tuned for this map, it gets there from half of all starts, up from 6%.
 
 ## section climbers: The climbers
-Each climber is a different optimizer. Each one tries to climb to higher ground after seeing the slope of the ground where it is located, as a two-dimensional gradient g. η is the learning rate.
+Each climber is a different optimizer. Each one tries to climb to higher ground after seeing the slope of its current position as a two-dimensional gradient g. η is the learning rate.
 
-The default learning rates are sensible picks that are not tuned to make any optimizer win. Where each one ends up depends strongly on η and the other parameters, so try the sliders.
+The default learning rates are sensible picks that are not tuned to make any optimizer win. Where each optimizer ends up depends strongly on η and the other parameters, so try the sliders.
 
 ## climber sgd: Plain gradient descent
 Steps in proportion to the slope. Steep ground means big strides and flat ground means tiny ones, so it crawls across the Sunset and the Mission.
@@ -96,11 +96,11 @@ Moves exactly η along each axis every step, in the direction of a blend of mome
 Tries a random nearby point each step. It always takes it if higher and sometimes if lower, less often as it cools. With billions of weights a random move almost never helps, which is why networks use gradients.
 
 ## section north: Adam is sensitive to which way is North
-SGD, Momentum, Muon and Nesterov only care about the gradient's direction and length. But Adam, RMSprop and Lion treat east-west and north-south as separate numbers.
+SGD, Momentum, Muon, and Nesterov only care about the gradient's direction and length. But Adam, RMSprop, and Lion treat east-west and north-south as separate numbers.
 
-Adam rescales the east-west and north-south slopes separately, so early on it moves roughly η along *each* axis. This makes diagonal steps √2 times longer than straight ones. If you rotate the axes, the diagonal rotates, so Adam takes a different route. From Hayes Valley, rotating 30° leads Adam to Alamo Square instead of Lafayette Park.
+Adam rescales the east-west and north-south slopes separately, so on steady slopes it moves roughly η along each axis. This makes diagonal steps √2 times longer than straight ones. If you rotate the map's axes, the diagonal rotates, so Adam takes a different route. From Hayes Valley, rotating 30° leads Adam to Alamo Square instead of Lafayette Park.
 
-This matters in real LLM training — Adam's per-coordinate scaling works best when the important directions line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
+This matters in real LLM training — Adam's per-coordinate scaling works best when each thing the model is learning lines up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
 
 ## section muon: Muon was not built for a 2D map
 Muon was made for training large weight matrices. It takes the momentum matrix and replaces it with roughly the nearest orthogonal matrix using a few Newton-Schulz iterations, bringing every singular value close to 1. The point of this is to dampen overly dominant directions and boost underrepresented directions.
