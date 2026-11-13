@@ -114,12 +114,12 @@ To see what Muon is actually for, here's a small demo of a single weight matrix 
 ## template matrix random
 At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, Muon {muon}.
 
-SGD's learning rate is capped by the most common fact, so rare facts are barely affected. Muon gives every direction of the update the same size, so rare facts are learned about as quickly as common ones. Adam's per-number normalization only helps when the facts line up with the axes, where its rare-fact error at this step is {adam_other}. SGD and Muon are unaffected.
+SGD's learning rate is capped by the most common fact, so rare facts are barely learned. Muon gives every direction of the update the same size, so rare facts are learned about as quickly as common ones. Adam's per-number normalization only helps when the facts line up with the axes, where its rare-fact error at this step is {adam_other}.
 
 ## template matrix aligned
 At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, Muon {muon}.
 
-SGD's learning rate is capped by the most common fact, so rare facts are barely affected. Muon gives every direction of the update the same size, so rare facts are learned about as quickly as common ones. Adam's per-number normalization works well here because each fact sits on its own axis. When the facts are in random directions, Adam's rare-fact error at this step is {adam_other}. SGD and Muon are unaffected.
+SGD's learning rate is capped by the most common fact, so rare facts are barely learned. Muon gives every direction of the update the same size, so rare facts are learned about as quickly as common ones. Adam's per-number normalization works well here because each fact sits on its own axis. When the facts are in random directions, Adam's rare-fact error at this step is {adam_other}.
 
 ## section caveat: What a 2D map doesn't show well
 A map has only two dimensions while a language model can have billions, so this page doesn't fully translate to how optimizers work in LLM training.
