@@ -124,11 +124,11 @@ SGD's learning rate is capped by the most common fact, so rare facts are barely 
 ## section caveat: What a 2D map doesn't show well
 A map has only two dimensions while a language model can have billions, so this page doesn't fully translate to how optimizers work in LLM training.
 
-**Getting stuck on the wrong hill is mostly a 2D problem.** At a true local minimum the loss has to increase in every direction at once. When there are billions of dimensions and the loss is still high, that is very rare, unlike the many tiny hills on this map. In real training, slow stretches are usually saddle points and long flat valleys.
+**Getting stuck on a short hill is mostly a low-dimensional problem.** At a true local minimum the loss has to increase in every direction at once. When there are billions of dimensions and the loss is still high, that is very rare. This map, on the other hand, is full of tiny hills. In real training, runs with different random starts usually reach very similar loss. So the optimizer matters less for the exact loss it is able to reach and more for how quickly the loss falls and which exact solution it ends at.
 
-**In real training, the minima found usually have about equal loss.** Different training runs with different random starts usually reach very similar loss, unlike many of the climbs on this map. So the optimizer matters less for the exact loss it is able to reach and more because it affects how fast the loss falls and which exact solution it ends at.
+**Real networks have millions of directions at once.** A 2D map only has one slope at each point. Real networks have millions of directions, some steep and some flat, and Adam and Muon are designed to help handle that. The fact-learning demo shows a small case of this.
 
-A 2D map does show, though, how each optimizer moves. For example: Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.
+A 2D map does show, though, how each optimizer moves. For example, Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.
 
 
 ## footer
