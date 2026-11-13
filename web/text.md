@@ -11,7 +11,7 @@ How this file works:
   a typo can't break the live site. Short labels (tabs, buttons, legends) are in index.html.
 
 ## link preview
-Gradient descent, Momentum, Adam and Muon race uphill across San Francisco. Type your address and see which hill each optimizer reaches.
+Pick a starting point anywhere in San Francisco! Four optimizers will climb as high as they can.
 
 ## subtitle
 loss = −elevation
@@ -98,18 +98,18 @@ Tries a random nearby point each step. It always takes it if higher and sometime
 ## section north: Adam is sensitive to which way is North
 SGD, Momentum, Muon and Nesterov only care about the gradient's direction and length. But Adam, RMSprop and Lion treat east-west and north-south as separate numbers.
 
-Adam rescales the east-west and north-south slopes separately, so early on it moves roughly η along *each* axis. That makes diagonal steps √2 times longer than straight ones. If you rotate the axes, the diagonal rotates, so Adam takes a different route. From Hayes Valley, rotating 30° leads Adam to Alamo Square instead of Lafayette Park.
+Adam rescales the east-west and north-south slopes separately, so early on it moves roughly η along *each* axis. This makes diagonal steps √2 times longer than straight ones. If you rotate the axes, the diagonal rotates, so Adam takes a different route. From Hayes Valley, rotating 30° leads Adam to Alamo Square instead of Lafayette Park.
 
-This matters in actual LLM training. Adam's per-coordinate scaling works best when the important directions in a problem line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
+This matters in real LLM training — Adam's per-coordinate scaling works best when the important directions line up with individual parameters. This can be seen in the demo below where I trained a single weight matrix to store facts. When the facts are lined up with the axes, Adam does well. When they point in random directions, its error on the rare facts after 25 training steps is about five times higher.
 
 ## section muon: Muon was not built for a 2D map
-Muon was made for LLM weight matrices, not a 2D map. It takes the momentum matrix and replaces it with roughly the nearest orthogonal matrix using a few Newton-Schulz iterations, bringing every singular value close to 1. This is so every direction gets roughly the same sized update.
+Muon was made for training large weight matrices. It takes the momentum matrix and replaces it with roughly the nearest orthogonal matrix using a few Newton-Schulz iterations, bringing every singular value close to 1. The point of this is to dampen overly dominant directions and boost underrepresented directions.
 
-On a 2D map, though, the position is just a 1×2 matrix with one singular value. So the optimizer becomes just "follow the direction of the momentum and always step the same distance." On the map, Muon never fully comes to rest on a summit since its step never shrinks unless you turn on learning-rate decay.
+On a 2D map, though, the position is just a 1×2 matrix with one singular value. With only one singular value, the optimizer just becomes "follow the direction of the momentum and always step the same distance." On the map, Muon actually never fully comes to rest on a summit since its step never shrinks (unless you turn on learning-rate decay).
 
-To see what Muon is actually for, here is a small demo of a single weight matrix storing facts. I train a 64×64 matrix to map 64 keys to 64 values. The facts appear with very different frequencies — the most common fact appears 42% of the time and the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.
+To see what Muon is actually for, here's a small demo of a single weight matrix storing facts. I trained a 64×64 matrix to map 64 keys to 64 values. The facts appear with very different frequencies — the most common fact appears 42% of the time and the rarest 0.08%. Each optimizer starts from zero and uses its own best learning rate.
 
-[Wang et al. (ICLR 2026)](https://arxiv.org/abs/2509.26030) study this kind of memory and see the same pattern in a real language model, where Muon learns rare facts much better than Adam.
+[Wang et al. (ICLR 2026)](https://arxiv.org/abs/2509.26030) study this setup, called an associative memory, and see the same pattern in a real language model where Muon learns rare facts much better than Adam.
 
 ## template matrix random
 At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, Muon {muon}.
@@ -121,14 +121,14 @@ At step {step}, error on the rarest half of the facts: SGD {sgd}, Adam {adam}, M
 
 SGD's learning rate is capped by the most common fact, so rare facts barely move. Muon gives every direction of the update the same size, so rare facts learn about as fast as common ones. Adam's per-number normalization works well here because each fact sits on its own axis. With the facts in random directions its rare-fact error at this step is {adam_other}. SGD and Muon give identical results either way.
 
-## section caveat: What a map can't show
-A map has two dimensions while a language model can have billions, so some of what happens here doesn't carry over.
+## section caveat: What a 2D map doesn't show
+A map has two dimensions while a language model can have billions, so this page doesn't fully translate to how optimizers work in LLM training.
 
-**Getting stuck on the wrong hill is mostly a 2D problem.** At a local minimum the loss has to curve upward in every direction at once. With billions of directions, a point where the loss is still high almost always has some direction that leads down. Slow stretches in real training are usually saddle points and long flat valleys.
+**Getting stuck on the wrong hill is mostly a 2D problem.** At a true local minimum the loss has to curve upward in every direction at once, and that is very rare when there are billions of dimensions. In real training, slow stretches are usually saddle points and long flat valleys.
 
-**The minima that large networks find tend to be about equally good.** Different training runs usually reach very similar loss. On this map, most hilltops are far lower than Mount Davidson. The optimizer still matters, because it decides how fast training gets there and which of those solutions it ends in, and some of them work better on new data than others.
+**The minima that large networks find tend to be about equally good.** Different training runs usually reach very similar loss. On this map, most hilltops are far lower than Mount Davidson. In real training, the optimizer matters mostly not because of the final loss it reaches but because it affects how fast training progresses and which exact solution it ends at.
 
-What does carry over is how each optimizer moves. Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.
+A 2D map does show, though, how each optimizer moves. For example: Adam depends on the choice of axes, Momentum carries speed across flat ground, and SGD crawls where the slope is small.
 
 
 ## footer
